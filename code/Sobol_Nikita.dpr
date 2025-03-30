@@ -181,7 +181,7 @@ begin
     CurrentProj := CurrentProj^.Next;
   end;
   CloseFile(FProjects);
-  Writeln('Данные сохранены. Нажмите любую клавишу для продолжения...');
+  Writeln('Данные сохранены. Нажмите Enter...');
   readln;
 end;
 
@@ -274,6 +274,7 @@ end;
 
 // Delete data
 
+// TODO: delete by name
 procedure DeleteEmployee(var EmployeesHead: PEmployeeNode);
 var
   Code: Integer;
@@ -455,14 +456,14 @@ begin
           end;
 
         esfName:
-          if LowerCase(Value) = LowerCase(Current^.Data.Name) then
+          if LowerCase(Value) = LowerCase(string(Current^.Data.Name)) then
           begin
             ViewEmployee(Current);
             Found := True;
           end;
 
         esfPosition:
-          if LowerCase(Value) = LowerCase(Current^.Data.Position) then
+          if LowerCase(Value) = LowerCase(string(Current^.Data.Position)) then
           begin
             ViewEmployee(Current);
             Found := True;
@@ -526,7 +527,7 @@ begin
     begin
       case Field of
         psfName:
-          if LowerCase(Value) = LowerCase(Current^.Data.ProjectName) then
+          if LowerCase(Value) = LowerCase(string(Current^.Data.ProjectName)) then
           begin
             ViewProject(Current);
             Found := True;
@@ -588,11 +589,18 @@ begin
       begin
         var CompareResult: Integer;
         case Field of
-          esfCode:        CompareResult := Current^.Data.Code - NextNode^.Data.Code;
-          esfName:        CompareResult := CompareText(Current^.Data.Name, NextNode^.Data.Name);
-          esfPosition:    CompareResult := CompareText(Current^.Data.Position, NextNode^.Data.Position);
-          esfHours:       CompareResult := Current^.Data.HoursPerDay - NextNode^.Data.HoursPerDay;
-          esfManagerCode: CompareResult := Current^.Data.ManagerCode - NextNode^.Data.ManagerCode;
+          esfCode:
+            CompareResult := Current^.Data.Code - NextNode^.Data.Code;
+          esfName:
+            CompareResult := CompareText(string(Current^.Data.Name), string(NextNode^.Data.Name));
+          esfPosition:
+            CompareResult := CompareText(string(Current^.Data.Position), string(NextNode^.Data.Position));
+          esfHours:
+            CompareResult := Current^.Data.HoursPerDay - NextNode^.Data.HoursPerDay;
+          esfManagerCode:
+            CompareResult := Current^.Data.ManagerCode - NextNode^.Data.ManagerCode;
+          else
+            CompareResult := 0;
         end;
 
         if Direction = sdDescending then
@@ -632,11 +640,18 @@ begin
       while NextNode <> nil do
       begin
         case Field of
-          psfName:         CompareResult := CompareText(Current^.Data.ProjectName, NextNode^.Data.ProjectName);
-          psfEmployeeCode: CompareResult := Current^.Data.EmployeeCode - NextNode^.Data.EmployeeCode;
-          psfManagerCode:  CompareResult := Current^.Data.ManagerCode - NextNode^.Data.ManagerCode;
-          psfIssueDate:    CompareResult := CompareDate(Current^.Data.IssueDate, NextNode^.Data.IssueDate);
-          psfDeadline:     CompareResult := CompareDate(Current^.Data.Deadline, NextNode^.Data.Deadline);
+          psfName:
+            CompareResult := CompareText(string(Current^.Data.ProjectName), string(NextNode^.Data.ProjectName));
+          psfEmployeeCode:
+            CompareResult := Current^.Data.EmployeeCode - NextNode^.Data.EmployeeCode;
+          psfManagerCode:
+            CompareResult := Current^.Data.ManagerCode - NextNode^.Data.ManagerCode;
+          psfIssueDate:
+            CompareResult := CompareDate(Current^.Data.IssueDate, NextNode^.Data.IssueDate);
+          psfDeadline:
+            CompareResult := CompareDate(Current^.Data.Deadline, NextNode^.Data.Deadline);
+          else
+            CompareResult := 0;
         end;
 
         if Direction = sdDescending then
