@@ -1,0 +1,201 @@
+program Sobol_Nikita;
+
+{$APPTYPE CONSOLE}
+
+uses
+  SysUtils, DateUtils, windows;
+
+type
+  TEmployee = record
+    Code: Integer;
+    Name: string[50];
+    Position: string[30];
+    HoursPerDay: Integer;
+    ManagerCode: Integer;
+  end;
+
+  TProject = record
+    ProjectName: string[50];
+    Task: string[100];
+    EmployeeCode: Integer;
+    ManagerCode: Integer;
+    IssueDate: TDate;
+    Deadline: TDate;
+  end;
+
+  PEmployeeNode = ^TEmployeeNode;
+  TEmployeeNode = record
+    Data: TEmployee;
+    Next: PEmployeeNode;
+  end;
+
+  PProjectNode = ^TProjectNode;
+  TProjectNode = record
+    Data: TProject;
+    Next: PProjectNode;
+  end;
+
+
+var
+  EmployeesHead: PEmployeeNode = nil;
+  ProjectsHead: PProjectNode = nil;
+  str: string;
+
+
+procedure ClearScreen;
+var
+  cursor: COORD;
+  r: cardinal;
+begin
+  r := 300;
+  cursor.X := 0;
+  cursor.Y := 0;
+  FillConsoleOutputCharacter(GetStdHandle(STD_OUTPUT_HANDLE), ' ', 80 * r, cursor, r);
+  SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor);
+end;
+
+
+function ReadDate(Prompt: string = ''): TDateTime;
+var
+  S: string;
+  Date: TDateTime;
+  isCorrect: boolean;
+begin
+  S := '';
+  isCorrect := true;
+  repeat
+    if not isCorrect then
+      writeln('Неверный формат. Повтрите: ');
+    Write(Prompt, '(ДД.ММ.ГГГГ): ');
+    Readln(S);
+    isCorrect := false;
+  until TryStrToDate(S, Date);
+  Result := Date;
+end;
+
+//Clear memory
+
+procedure ClearEmployees(var Head: PEmployeeNode);
+var
+  Current, Temp: PEmployeeNode;
+begin
+  Current := Head;
+  while Current <> nil do
+  begin
+    Temp := Current;
+    Current := Current^.Next;
+    Dispose(Temp);
+  end;
+  Head := nil;
+end;
+
+procedure ClearProjects(var Head: PProjectNode);
+var
+  Current, Temp: PProjectNode;
+begin
+  Current := Head;
+  while Current <> nil do
+  begin
+    Temp := Current;
+    Current := Current^.Next;
+    Dispose(Temp);
+  end;
+  Head := nil;
+end;
+
+
+//Files
+
+procedure LoadData(var EmployeesHead: PEmployeeNode);
+var
+  FEmployees: file of TEmployee;
+  FProjects: file of TProject;
+  Emp: TEmployee;
+  Proj: TProject;
+  NewNodeEmp: PEmployeeNode;
+  NewNodeProj: PProjectNode;
+begin
+  // Загрузка сотрудников
+  if FileExists('employees.TEmployee') then
+  begin
+    AssignFile(FEmployees, 'employees.TEmployee');
+    Reset(FEmployees);
+    while not Eof(FEmployees) do
+    begin
+      Read(FEmployees, Emp);
+      New(NewNodeEmp);
+      NewNodeEmp^.Data := Emp;
+      NewNodeEmp^.Next := EmployeesHead;
+      EmployeesHead := NewNodeEmp;
+    end;
+    CloseFile(FEmployees);
+
+    // Creating an empty head
+    New(NewNodeEmp);
+    NewNodeEmp^.Next := EmployeesHead;
+    EmployeesHead := NewNodeEmp;
+  end;
+
+  // Загрузка проектов
+  if FileExists('projects.TProject') then
+  begin
+    AssignFile(FProjects, 'projects.TProject');
+    Reset(FProjects);
+    while not Eof(FProjects) do
+    begin
+      Read(FProjects, Proj);
+      New(NewNodeProj);
+      NewNodeProj^.Data := Proj;
+      NewNodeProj^.Next := ProjectsHead;
+      ProjectsHead := NewNodeProj;
+    end;
+    CloseFile(FProjects);
+
+    // Creating an empty head
+    New(NewNodeProj);
+    NewNodeProj^.Next := ProjectsHead;
+    ProjectsHead := NewNodeProj;
+  end;
+  Writeln('Данные загружены');
+end;
+
+procedure SaveData;
+var
+  CurrentEmp: PEmployeeNode;
+  CurrentProj: PProjectNode;
+  FEmployees: file of TEmployee;
+  FProjects: file of TProject;
+begin
+  // Сохранение сотрудников
+  AssignFile(FEmployees, 'employees.TEmployee');
+  Rewrite(FEmployees);
+  CurrentEmp := EmployeesHead;
+  while CurrentEmp <> nil do
+  begin
+    Write(FEmployees, CurrentEmp^.Data);
+    CurrentEmp := CurrentEmp^.Next;
+  end;
+  CloseFile(FEmployees);
+
+  // Сохранение проектов
+  AssignFile(FProjects, 'projects.TProject');
+  Rewrite(FProjects);
+  CurrentProj := ProjectsHead;
+  while CurrentProj <> nil do
+  begin
+    Write(FProjects, CurrentProj^.Data);
+    CurrentProj := CurrentProj^.Next;
+  end;
+  CloseFile(FProjects);
+  Writeln('Данные сохранены');
+end;
+
+var
+  tdat: TDateTime;
+
+begin
+
+
+
+   readln;
+end.
