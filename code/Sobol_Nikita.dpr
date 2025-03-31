@@ -329,34 +329,17 @@ procedure AddProject(var ProjectsHead: PProjectNode; const empCode: integer);
 var
   proj: TProject;
   newNode: PProjectNode;
-  secondIter: boolean;
 begin
 
   Writeln('Добавление проекта:');
   Write('Название проекта: '); proj.ProjectName := shortString(getProjName(ProjectsHead));//Readln(proj.ProjectName);
   Write('Задача: '); Readln(proj.Task);
 
-  Write('Код исполнителя (1-', empCode, '): ');
-  secondIter := false;
-  repeat
-    if secondIter then
-    begin
-      write('Код не лежит в пределах [1, ', empCode, ']. Ввдеите другой: ');
-    end;
-    proj.EmployeeCode := readInt;
-    secondIter := true;
-  until (proj.EmployeeCode <= empCode) and (proj.EmployeeCode >= 0);
+  Write('Код исполнителя: ');
+  proj.EmployeeCode := readInt;
 
   Write('Код руководителя: ');
-  secondIter := false;
-  repeat
-    if secondIter then
-    begin
-      write('Код не лежит в пределах [1, ', empCode, ']. Ввдеите другой: ');
-    end;
-    proj.ManagerCode := readInt;
-    secondIter := true;
-  until (proj.ManagerCode <= empCode) and (proj.ManagerCode >= 0);
+  proj.ManagerCode := readInt;
   proj.IssueDate := ReadDate('Дата выдачи');
   proj.Deadline := ReadDate('Срок выполнения');
 
@@ -518,13 +501,36 @@ end;
 
 // Edit data
 
-procedure EditEmployee(var EmployeesHead: PEmployeeNode; const empCode: integer);
+procedure EditEmployee(var EmployeesHead: PEmployeeNode);
 var
   code: integer;
-  found, secondIter: boolean;
+  found: boolean;
   current: PEmployeeNode;
   choice: integer;
+  name: string[50];
 begin
+
+  Writeln('1. Удаление по ФИО');
+  Writeln('2. Удаление по коду');
+  Writeln('3. Назад');
+  Write('Выберите: ');
+
+  choice := ReadInt;
+
+  if choice = 1 then
+  begin
+    write('Введите ФИО: ');
+    readln(name);
+    current := EmployeesHead;
+    while current <> nil do
+    begin
+      if current^.Data.Name = name then
+      begin
+        ViewEmployee(current);
+      end;
+    end;
+  end;
+
   Write('Введите код сотрудника, которого необходимо изменить: ');
   code := ReadInt;
 
@@ -563,15 +569,6 @@ begin
           begin
             Write('Новый код руководителя: ');
             current^.Data.ManagerCode := readInt;
-            secondIter := false;
-            repeat
-              if secondIter then
-              begin
-                write('Код не лежит в пределах [1, ', empCode, ']. Ввдеите другой: ');
-              end;
-              current^.Data.ManagerCode := readInt;
-              secondIter := true;
-            until (current^.Data.ManagerCode <= empCode) and (current^.Data.ManagerCode >= 0);
           end;
       end;
       Found := true;
@@ -590,10 +587,10 @@ begin
   Readln;
 end;
 
-procedure EditProject(var ProjectsHead: PProjectNode; const empCode: integer);
+procedure EditProject(var ProjectsHead: PProjectNode);
 var
   name: string[50];
-  found, secondIter: boolean;
+  found: boolean;
   current: PProjectNode;
   choice: integer;
 begin
@@ -631,15 +628,7 @@ begin
         3:
           begin
             Write('Новый код исполнителя: ');
-            secondIter := false;
-            repeat
-              if secondIter then
-              begin
-                write('Код не лежит в пределах [1, ', empCode, ']. Ввдеите другой: ');
-              end;
-              current^.Data.EmployeeCode := readInt;
-              secondIter := true;
-            until (current^.Data.EmployeeCode<= empCode) and (current^.Data.EmployeeCode >= 0);
+            current^.Data.EmployeeCode := readInt;
           end;
         4:
           begin
@@ -671,15 +660,14 @@ begin
   Readln;
 end;
 
-procedure EditData(var EmployeesHead: PEmployeeNode; var ProjectssHead: PProjectNode;
-                  const empCode: integer);
+procedure EditData(var EmployeesHead: PEmployeeNode; var ProjectssHead: PProjectNode);
 var
   choice: integer;
 begin
   Writeln('=== Редактирование данных ===');
 
-  Writeln('1. Удаление сотрудников');
-  Writeln('2. Удаление проектов');
+  Writeln('1. Редактирование сотрудников');
+  Writeln('2. Редактирование проектов');
   Writeln('3. Назад');
   Write('Выберите: ');
   choice := readInt;
@@ -687,12 +675,12 @@ begin
     1:
       begin
         clearScreen;
-        EditEmployee(EmployeesHead, empCode);
+        EditEmployee(EmployeesHead);
       end;
     2:
       begin
         clearScreen;
-        EditProject(ProjectssHead, empCode);
+        EditProject(ProjectssHead);
       end;
   end;
 end;
@@ -1246,7 +1234,7 @@ begin
       7:
         begin
           ClearScreen;
-          EditData(EmployeesHead, ProjectsHead, empCode);
+          EditData(EmployeesHead, ProjectsHead);
         end;
       8:
         begin
