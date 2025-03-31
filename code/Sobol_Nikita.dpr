@@ -160,6 +160,7 @@ var
   NewNodeEmp: PEmployeeNode;
   NewNodeProj: PProjectNode;
 begin
+  clearScreen;
   // Loading employees
   if FileExists('employees.TEmployee') then
   begin
@@ -243,6 +244,8 @@ var
   current: PEmployeeNode;
 begin
   current := EmployeesHead;
+  if current = nil then
+    writeln('Список сотрудников пуст');
   while current <> nil do
   begin
     ViewEmployee(current);
@@ -351,8 +354,6 @@ end;
 
 
 // Delete data
-
-// TODO: delete by name
 procedure DeleteEmployeeByCode(var EmployeesHead: PEmployeeNode);
 var
   code, choose: integer;
@@ -476,7 +477,7 @@ end;
 
 procedure DeleteData(var EmployeesHead: PEmployeeNode; var ProjectssHead: PProjectNode);
 var
-  choice, subchoice: integer;
+  choice: integer;
 begin
   Writeln('=== Удаление данных ===');
 
@@ -942,8 +943,7 @@ end;
 procedure SortEmployees(var EmployeesHead: PEmployeeNode;
                         Field: TEmployeeSortField; Direction: TSortDirection);
 var
-  Current, NextNode: PEmployeeNode;
-  Temp: TEmployee;
+  Current, NextNode, prevNode: PEmployeeNode;
   Swapped: Boolean;
 begin
   if EmployeesHead <> nil then
@@ -952,6 +952,7 @@ begin
       Swapped := False;
       Current := EmployeesHead;
       NextNode := Current^.Next;
+      prevNode := nil;
 
       while NextNode <> nil do
       begin
@@ -976,12 +977,17 @@ begin
 
         if CompareResult > 0 then
         begin
-          Temp := Current^.Data;
-          Current^.Data := NextNode^.Data;
-          NextNode^.Data := Temp;
-          Swapped := True;
+          if prevNode <> nil then
+            prevNode^.Next := NextNode;
+          Current^.Next := NextNode^.Next;
+          NextNode^.Next := Current;
+//          swap Current and NextNode
+//          Temp := Current^.Data;
+//          Current^.Data := NextNode^.Data;
+//          NextNode^.Data := Temp;
+//          Swapped := True;
         end;
-
+        prevNode := Current;
         Current := NextNode;
         NextNode := NextNode^.Next;
       end;
@@ -993,8 +999,7 @@ end;
 procedure SortProjects(var ProjectsHead: PProjectNode;
                       Field: TProjectSortField; Direction: TSortDirection);
 var
-  Current, NextNode: PProjectNode;
-  Temp: TProject;
+  Current, NextNode, prevNode: PProjectNode;
   Swapped: Boolean;
   CompareResult: Integer;
 begin
@@ -1004,7 +1009,7 @@ begin
       Swapped := False;
       Current := ProjectsHead;
       NextNode := Current^.Next;
-
+      prevNode := nil;
       while NextNode <> nil do
       begin
         case Field of
@@ -1027,14 +1032,15 @@ begin
 
         if CompareResult > 0 then
         begin
-          Temp := Current^.Data;
-          Current^.Data := NextNode^.Data;
-          NextNode^.Data := Temp;
-          Swapped := True;
+          if prevNode <> nil then
+            prevNode^.Next := NextNode;
+          Current^.Next := NextNode^.Next;
+          NextNode^.Next := Current;
         end;
 
-        Current := NextNode;
-        NextNode := NextNode^.Next;
+        prevNode := current;
+        current := nextNode;
+        nextNode := nextNode^.Next;
       end;
     until not Swapped;
   end;
