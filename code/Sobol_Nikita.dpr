@@ -324,16 +324,39 @@ begin
   EmployeesHead := newNode;
 end;
 
-procedure AddProject(var ProjectsHead: PProjectNode);
+
+procedure AddProject(var ProjectsHead: PProjectNode; const empCode: integer);
 var
   proj: TProject;
   newNode: PProjectNode;
+  secondIter: boolean;
 begin
+
   Writeln('Добавление проекта:');
   Write('Название проекта: '); proj.ProjectName := shortString(getProjName(ProjectsHead));//Readln(proj.ProjectName);
   Write('Задача: '); Readln(proj.Task);
-  Write('Код исполнителя: '); proj.EmployeeCode := readInt;
-  Write('Код руководителя: '); proj.ManagerCode := readInt;
+
+  Write('Код исполнителя (1-', empCode, '): ');
+  secondIter := false;
+  repeat
+    if secondIter then
+    begin
+      write('Код не лежит в пределах [1, ', empCode, ']. Ввдеите другой: ');
+    end;
+    proj.EmployeeCode := readInt;
+    secondIter := true;
+  until (proj.EmployeeCode <= empCode) and (proj.EmployeeCode >= 0);
+
+  Write('Код руководителя: ');
+  secondIter := false;
+  repeat
+    if secondIter then
+    begin
+      write('Код не лежит в пределах [1, ', empCode, ']. Ввдеите другой: ');
+    end;
+    proj.ManagerCode := readInt;
+    secondIter := true;
+  until (proj.ManagerCode <= empCode) and (proj.ManagerCode >= 0);
   proj.IssueDate := ReadDate('Дата выдачи');
   proj.Deadline := ReadDate('Срок выполнения');
 
@@ -347,11 +370,11 @@ end;
 // Delete data
 
 // TODO: delete by name
-procedure DeleteEmployee(var EmployeesHead: PEmployeeNode);
+procedure DeleteEmployeeByCode(var EmployeesHead: PEmployeeNode);
 var
-  code: Integer;
+  code, choose: integer;
   current, prev: PEmployeeNode;
-  found: Boolean;
+  found, confirm: boolean;
 begin
   Write('Введите код сотрудника для удаления: ');
   code := readInt;
@@ -364,12 +387,22 @@ begin
   begin
     if current^.Data.Code = code then
     begin
-      if prev = nil then
-        EmployeesHead := current^.Next
-      else
-        prev^.Next := current^.Next;
+      confirm := false;
+      writeln('Действительно удалить этого сотрудника?');
+      writeln('1. Да');
+      writeln('2. Нет');
+      choose := ReadInt;
+      if choose = 1 then
+        confirm := true;
+      if confirm then
+      begin
+        if prev = nil then
+          EmployeesHead := current^.Next
+        else
+          prev^.Next := current^.Next;
 
-      Dispose(current);
+        Dispose(current);
+      end;
       found := True;
     end
     else
@@ -387,7 +420,38 @@ begin
   Readln;
 end;
 
-procedure DeleteProject(var ProjectssHead: PProjectNode);
+procedure DeleteEmployee(var EmployeesHead: PEmployeeNode);
+var
+  choice: integer;
+  current: PEmployeeNode;
+  name: string[50];
+begin
+  Writeln('=== Удаление данных ===');
+
+  Writeln('1. Удаление по ФИО');
+  Writeln('2. Удаление по коду');
+  Writeln('3. Назад');
+  Write('Выберите: ');
+
+  choice := ReadInt;
+
+  if choice = 1 then
+  begin
+    write('Введите ФИО: ');
+    readln(name);
+    current := EmployeesHead;
+    while current <> nil do
+    begin
+      if current^.Data.Name = name then
+      begin
+        ViewEmployee(current);
+      end;
+    end;
+  end;
+  DeleteEmployeeByCode(EmployeesHead);
+end;
+
+procedure DeleteProject(var ProjectsHead: PProjectNode);
 var
   name: string[50];
   current, prev: PProjectNode;
@@ -396,7 +460,7 @@ begin
   Write('Введите название проекта для удаления: ');
   readln(name);
 
-  current := ProjectssHead;
+  current := ProjectsHead;
   prev := nil;
   Found := False;
 
@@ -405,7 +469,7 @@ begin
     if current^.Data.ProjectName = name then
     begin
       if prev = nil then
-        ProjectssHead := current^.Next
+        ProjectsHead := current^.Next
       else
         prev^.Next := current^.Next;
 
@@ -429,7 +493,7 @@ end;
 
 procedure DeleteData(var EmployeesHead: PEmployeeNode; var ProjectssHead: PProjectNode);
 var
-  choice: integer;
+  choice, subchoice: integer;
 begin
   Writeln('=== Удаление данных ===');
 
@@ -454,10 +518,10 @@ end;
 
 // Edit data
 
-procedure EditEmployee(var EmployeesHead: PEmployeeNode);
+procedure EditEmployee(var EmployeesHead: PEmployeeNode; const empCode: integer);
 var
   code: integer;
-  found: Boolean;
+  found, secondIter: boolean;
   current: PEmployeeNode;
   choice: integer;
 begin
@@ -499,6 +563,15 @@ begin
           begin
             Write('Новый код руководителя: ');
             current^.Data.ManagerCode := readInt;
+            secondIter := false;
+            repeat
+              if secondIter then
+              begin
+                write('Код не лежит в пределах [1, ', empCode, ']. Ввдеите другой: ');
+              end;
+              current^.Data.ManagerCode := readInt;
+              secondIter := true;
+            until (current^.Data.ManagerCode <= empCode) and (current^.Data.ManagerCode >= 0);
           end;
       end;
       Found := true;
@@ -517,10 +590,10 @@ begin
   Readln;
 end;
 
-procedure EditProject(var ProjectsHead: PProjectNode);
+procedure EditProject(var ProjectsHead: PProjectNode; const empCode: integer);
 var
   name: string[50];
-  found: Boolean;
+  found, secondIter: boolean;
   current: PProjectNode;
   choice: integer;
 begin
@@ -558,7 +631,15 @@ begin
         3:
           begin
             Write('Новый код исполнителя: ');
-            current^.Data.EmployeeCode := readInt;
+            secondIter := false;
+            repeat
+              if secondIter then
+              begin
+                write('Код не лежит в пределах [1, ', empCode, ']. Ввдеите другой: ');
+              end;
+              current^.Data.EmployeeCode := readInt;
+              secondIter := true;
+            until (current^.Data.EmployeeCode<= empCode) and (current^.Data.EmployeeCode >= 0);
           end;
         4:
           begin
@@ -590,7 +671,8 @@ begin
   Readln;
 end;
 
-procedure EditData(var EmployeesHead: PEmployeeNode; var ProjectssHead: PProjectNode);
+procedure EditData(var EmployeesHead: PEmployeeNode; var ProjectssHead: PProjectNode;
+                  const empCode: integer);
 var
   choice: integer;
 begin
@@ -605,12 +687,12 @@ begin
     1:
       begin
         clearScreen;
-        EditEmployee(EmployeesHead);
+        EditEmployee(EmployeesHead, empCode);
       end;
     2:
       begin
         clearScreen;
-        EditProject(ProjectssHead);
+        EditProject(ProjectssHead, empCode);
       end;
   end;
 end;
@@ -655,9 +737,11 @@ begin
         CurrentProj := CurrentProj^.Next;
       end;
 
+      CloseFile(OutputFile);
+
       if not HasData then
         Writeln('Проект не найден или не содержит задач');
-      CloseFile(OutputFile);
+
     end
     else
       Writeln('Список проектов пуст!');
@@ -1118,7 +1202,7 @@ begin
     Writeln('5. Добавление');
     Writeln('6. Удаление');
     Writeln('7. Редактирование');
-    Writeln('8. Спец. функции');
+    Writeln('8. Список задач по проекту / задачи с ближайшим сроком (месяц)');
     Writeln('9. Выход без сохранения');
     Writeln('10. Выход с сохранением');
     Write('Выберите пункт: ');
@@ -1149,7 +1233,7 @@ begin
           SubMenu('Добавление данных', SubChoice);
           case SubChoice of
             1: AddEmployee(EmployeesHead, empCode);
-            2: AddProject(ProjectsHead);
+            2: AddProject(ProjectsHead, empCode);
           end;
           writeln('Данные успешно добавлены! Нажмите Enter...');
           readln;
@@ -1162,7 +1246,7 @@ begin
       7:
         begin
           ClearScreen;
-          EditData(EmployeesHead, ProjectsHead);
+          EditData(EmployeesHead, ProjectsHead, empCode);
         end;
       8:
         begin
@@ -1187,3 +1271,5 @@ begin
   empCode := 1;
   ShowMenu(EmployeesHead, ProjectsHead, empCode);
 end.
+
+// TODO edit menu (№8). Fix save
