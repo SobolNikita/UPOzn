@@ -1,4 +1,4 @@
-program Sobol_Nikita;
+п»їprogram Sobol_Nikita;
 
 {$APPTYPE CONSOLE}
 
@@ -47,14 +47,14 @@ var
 
 procedure ClearScreen;
 var
-  cursor: COORD;
-  r: cardinal;
+  hConsole: THandle;
+  cursorPos: TCoord;
 begin
-  r := 300;
-  cursor.X := 0;
-  cursor.Y := 0;
-  FillConsoleOutputCharacter(GetStdHandle(STD_OUTPUT_HANDLE), ' ', 80 * r, cursor, r);
-  SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor);
+  hConsole := GetStdHandle(STD_OUTPUT_HANDLE);
+  Write(#27'[2J'#27'[3J');
+  cursorPos.X := 0;
+  cursorPos.Y := 0;
+  SetConsoleCursorPosition(hConsole, cursorPos);
 end;
 
 
@@ -68,8 +68,8 @@ begin
   isCorrect := true;
   repeat
     if not isCorrect then
-      Writeln('Неверный формат. Повтрите: ');
-    Write(Prompt, '(ДД.ММ.ГГГГ): ');
+      Writeln('РќРµРІРµСЂРЅС‹Р№ С„РѕСЂРјР°С‚. РџРѕРІС‚СЂРёС‚Рµ: ');
+    Write(Prompt, '(Р”Р”.РњРњ.Р“Р“Р“Р“): ');
     Readln(S);
     isCorrect := false;
   until TryStrToDate(S, Date);
@@ -85,7 +85,7 @@ begin
   isCorrect := true;
   repeat
     if not isCorrect then
-      Write('Ошибка ввода. Повторите: ');
+      Write('РћС€РёР±РєР° РІРІРѕРґР°. РџРѕРІС‚РѕСЂРёС‚Рµ: ');
     Readln(s);
     isCorrect := false;
   until TryStrToInt(string(s), res);
@@ -100,7 +100,11 @@ begin
   secondIter := false;
   repeat
     if secondIter then
-      writeln('Строка должна содержать не менее одного символа!');
+    begin
+      writeln;
+      writeln('РЎС‚СЂРѕРєР° РґРѕР»Р¶РЅР° СЃРѕРґРµСЂР¶Р°С‚СЊ РЅРµ РјРµРЅРµРµ РѕРґРЅРѕРіРѕ СЃРёРјРІРѕР»Р°!');
+      write('РџРѕРІС‚РѕСЂРёС‚Рµ РІРІРѕРґ: ');
+    end;
     readln(str);
     str := trim(str);
     secondIter := true;
@@ -124,7 +128,7 @@ end;
 //        used := true;
 //    if used then
 //    begin
-//      Write('Такой код уже существует. Введите другой: ');
+//      Write('РўР°РєРѕР№ РєРѕРґ СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚. Р’РІРµРґРёС‚Рµ РґСЂСѓРіРѕР№: ');
 //    end
 //    else
 //    begin
@@ -167,7 +171,8 @@ end;
 
 //Files
 
-procedure LoadData(var EmployeesHead: PEmployeeNode; var ProjectsHead: PProjectNode);
+procedure LoadData(var EmployeesHead: PEmployeeNode; var ProjectsHead: PProjectNode;
+                  var empCode: integer);
 var
   FEmployees: file of TEmployee;
   FProjects: file of TProject;
@@ -184,6 +189,7 @@ begin
     Reset(FEmployees);
     while not Eof(FEmployees) do
     begin
+      empCode := empCode + 1;
       Read(FEmployees, Emp);
       New(NewNodeEmp);
       NewNodeEmp^.Data := emp;
@@ -208,7 +214,7 @@ begin
     end;
     CloseFile(FProjects);
   end;
-  Writeln('Данные загружены. Нажмите Enter для продолжения...');
+  Writeln('Р”Р°РЅРЅС‹Рµ Р·Р°РіСЂСѓР¶РµРЅС‹. РќР°Р¶РјРёС‚Рµ Enter РґР»СЏ РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ...');
   Readln;
 end;
 
@@ -240,7 +246,7 @@ begin
     currentProj := currentProj^.Next;
   end;
   CloseFile(FProjects);
-  Writeln('Данные сохранены. Нажмите Enter...');
+  Writeln('Р”Р°РЅРЅС‹Рµ СЃРѕС…СЂР°РЅРµРЅС‹. РќР°Р¶РјРёС‚Рµ Enter...');
   Readln;
 end;
 
@@ -249,11 +255,11 @@ end;
 procedure ViewEmployee(const employee: PEmployeeNode);
 begin
 writeln('------------------------------------------------------------------');
-  Writeln('Код: ', employee^.Data.Code);
-  Writeln('ФИО: ', employee^.Data.Name);
-  Writeln('Должность: ', employee^.Data.Position);
-  Writeln('Часов в день: ', employee^.Data.HoursPerDay);
-  Writeln('Код руководителя: ', employee^.Data.ManagerCode);
+  Writeln('РљРѕРґ: ', employee^.Data.Code);
+  Writeln('Р¤РРћ: ', employee^.Data.Name);
+  Writeln('Р”РѕР»Р¶РЅРѕСЃС‚СЊ: ', employee^.Data.Position);
+  Writeln('Р§Р°СЃРѕРІ РІ РґРµРЅСЊ: ', employee^.Data.HoursPerDay);
+  Writeln('РљРѕРґ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ: ', employee^.Data.ManagerCode);
   writeln('------------------------------------------------------------------');
   writeln;
 end;
@@ -261,10 +267,11 @@ end;
 procedure ViewEmployees(const EmployeesHead: PEmployeeNode);
 var
   current: PEmployeeNode;
+
 begin
   current := EmployeesHead;
   if current = nil then
-    writeln('Список сотрудников пуст');
+    writeln('РЎРїРёСЃРѕРє СЃРѕС‚СЂСѓРґРЅРёРєРѕРІ РїСѓСЃС‚');
   while current <> nil do
   begin
     ViewEmployee(current);
@@ -276,12 +283,12 @@ end;
 procedure ViewProject(const project: PProjectNode);
 begin
     writeln('------------------------------------------------------------------');
-    Writeln('Проект: ', project^.Data.ProjectName);
-    Writeln('Задача: ', project^.Data.Task);
-    Writeln('Исполнитель: ', project^.Data.EmployeeCode);
-    Writeln('Руководитель: ', project^.Data.ManagerCode);
-    Writeln('Дата выдачи: ', DateToStr(project^.Data.IssueDate));
-    Writeln('Срок выполнения: ', DateToStr(project^.Data.Deadline));
+    Writeln('РџСЂРѕРµРєС‚: ', project^.Data.ProjectName);
+    Writeln('Р—Р°РґР°С‡Р°: ', project^.Data.Task);
+    Writeln('РСЃРїРѕР»РЅРёС‚РµР»СЊ: ', project^.Data.EmployeeCode);
+    Writeln('Р СѓРєРѕРІРѕРґРёС‚РµР»СЊ: ', project^.Data.ManagerCode);
+    Writeln('Р”Р°С‚Р° РІС‹РґР°С‡Рё: ', DateToStr(project^.Data.IssueDate));
+    Writeln('РЎСЂРѕРє РІС‹РїРѕР»РЅРµРЅРёСЏ: ', DateToStr(project^.Data.Deadline));
     writeln('------------------------------------------------------------------');
     writeln;
 end;
@@ -289,12 +296,12 @@ end;
 procedure ViewProjectFile(const curFile: TextFile; const project: PProjectNode);
 begin
     writeln(curFile, '------------------------------------------------------------------');
-    Writeln(curFile, 'Проект: ', project^.Data.ProjectName);
-    Writeln(curFile, 'Задача: ', project^.Data.Task);
-    Writeln(curFile, 'Исполнитель: ', project^.Data.EmployeeCode);
-    Writeln(curFile, 'Руководитель: ', project^.Data.ManagerCode);
-    Writeln(curFile, 'Дата выдачи: ', DateToStr(project^.Data.IssueDate));
-    Writeln(curFile, 'Срок выполнения: ', DateToStr(project^.Data.Deadline));
+    Writeln(curFile, 'РџСЂРѕРµРєС‚: ', project^.Data.ProjectName);
+    Writeln(curFile, 'Р—Р°РґР°С‡Р°: ', project^.Data.Task);
+    Writeln(curFile, 'РСЃРїРѕР»РЅРёС‚РµР»СЊ: ', project^.Data.EmployeeCode);
+    Writeln(curFile, 'Р СѓРєРѕРІРѕРґРёС‚РµР»СЊ: ', project^.Data.ManagerCode);
+    Writeln(curFile, 'Р”Р°С‚Р° РІС‹РґР°С‡Рё: ', DateToStr(project^.Data.IssueDate));
+    Writeln(curFile, 'РЎСЂРѕРє РІС‹РїРѕР»РЅРµРЅРёСЏ: ', DateToStr(project^.Data.Deadline));
     writeln(curFile, '------------------------------------------------------------------');
     writeln(curFile, '');
 
@@ -306,7 +313,7 @@ var
 begin
   current := ProjectsHead;
   if current = nil then
-    writeln('Список проектов пуст');
+    writeln('РЎРїРёСЃРѕРє РїСЂРѕРµРєС‚РѕРІ РїСѓСЃС‚');
   while current <> nil do
   begin
     ViewProject(current);
@@ -331,8 +338,8 @@ begin
   secondIter := false;
   repeat
     if secondIter then
-      write('Проект с таким названием уже существует. Введите другое название:');
-    name := ReadStr;
+      write('РџСЂРѕРµРєС‚ СЃ С‚Р°РєРёРј РЅР°Р·РІР°РЅРёРµРј СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚. Р’РІРµРґРёС‚Рµ РґСЂСѓРіРѕРµ РЅР°Р·РІР°РЅРёРµ:');
+    name := ShortString(ReadStr());
 
     current := ProjectsHead;
     used := false;
@@ -351,13 +358,24 @@ procedure AddEmployee(var EmployeesHead: PEmployeeNode; var empCode: integer);
 var
   emp: TEmployee;
   newNode: PEmployeeNode;
+  secondIter: boolean;
 begin
-  Writeln('Добавление сотрудника:');
+  Writeln('Р”РѕР±Р°РІР»РµРЅРёРµ СЃРѕС‚СЂСѓРґРЅРёРєР°:');
   emp.Code := genCode(empCode);//emp.Code := readEmpCode(EmployeesHead);
-  Write('ФИО: '); emp.Name := ReadStr;
-  Write('Должность: '); emp.Position := ReadStr;
-  Write('Часов в день: '); emp.HoursPerDay := readInt;
-  Write('Код руководителя: '); emp.ManagerCode := readInt;
+  Write('Р¤РРћ: '); emp.Name := ShortString(ReadStr());
+  Write('Р”РѕР»Р¶РЅРѕСЃС‚СЊ: '); emp.Position := ShortString(ReadStr());
+  secondIter := false;
+  Write('Р§Р°СЃРѕРІ РІ РґРµРЅСЊ: ');
+  repeat
+    if secondIter then
+    begin
+      write('РћС€РёР±РєР°. Р§РёСЃР»Рѕ РґРѕР»Р¶РЅРѕ Р±С‹С‚СЊ РѕС‚ 0 РґРѕ 24: ')
+    end;
+    emp.HoursPerDay := readInt;
+    secondIter := true;
+  until (emp.HoursPerDay >= 0) and (emp.HoursPerDay <= 24);
+
+  Write('РљРѕРґ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ: '); emp.ManagerCode := readInt;
 
   New(newNode);
   newNode^.Data := emp;
@@ -372,17 +390,17 @@ var
   newNode: PProjectNode;
 begin
 
-  Writeln('Добавление проекта:');
-  Write('Название проекта: '); proj.ProjectName := shortString(getProjName(ProjectsHead));//Readln(proj.ProjectName);
-  Write('Задача: '); proj.Task := ReadStr;
+  Writeln('Р”РѕР±Р°РІР»РµРЅРёРµ РїСЂРѕРµРєС‚Р°:');
+  Write('РќР°Р·РІР°РЅРёРµ РїСЂРѕРµРєС‚Р°: '); proj.ProjectName := shortString(getProjName(ProjectsHead));//Readln(proj.ProjectName);
+  Write('Р—Р°РґР°С‡Р°: '); proj.Task := ShortString(ReadStr());
 
-  Write('Код исполнителя: ');
+  Write('РљРѕРґ РёСЃРїРѕР»РЅРёС‚РµР»СЏ: ');
   proj.EmployeeCode := readInt;
 
-  Write('Код руководителя: ');
+  Write('РљРѕРґ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ: ');
   proj.ManagerCode := readInt;
-  proj.IssueDate := ReadDate('Дата выдачи');
-  proj.Deadline := ReadDate('Срок выполнения');
+  proj.IssueDate := ReadDate('Р”Р°С‚Р° РІС‹РґР°С‡Рё');
+  proj.Deadline := ReadDate('РЎСЂРѕРє РІС‹РїРѕР»РЅРµРЅРёСЏ');
 
   New(newNode);
   newNode^.Data := proj;
@@ -398,7 +416,7 @@ var
   current, prev: PEmployeeNode;
   found, confirm: boolean;
 begin
-  Write('Введите код сотрудника для удаления: ');
+  Write('Р’РІРµРґРёС‚Рµ РєРѕРґ СЃРѕС‚СЂСѓРґРЅРёРєР° РґР»СЏ СѓРґР°Р»РµРЅРёСЏ: ');
   code := readInt;
 
   current := EmployeesHead;
@@ -410,9 +428,9 @@ begin
     if current^.Data.Code = code then
     begin
       confirm := false;
-      writeln('Действительно удалить этого сотрудника?');
-      writeln('1. Да');
-      writeln('2. Нет');
+      writeln('Р”РµР№СЃС‚РІРёС‚РµР»СЊРЅРѕ СѓРґР°Р»РёС‚СЊ СЌС‚РѕРіРѕ СЃРѕС‚СЂСѓРґРЅРёРєР°?');
+      writeln('1. Р”Р°');
+      writeln('2. РќРµС‚');
       choose := ReadInt;
       if choose = 1 then
         confirm := true;
@@ -435,10 +453,10 @@ begin
   end;
 
   if found then
-    Writeln('Сотрудник удален')
+    Writeln('РЎРѕС‚СЂСѓРґРЅРёРє СѓРґР°Р»РµРЅ')
   else
-    Writeln('Сотрудник не найден');
-  Writeln('Нажмите Enter для продолжения...');
+    Writeln('РЎРѕС‚СЂСѓРґРЅРёРє РЅРµ РЅР°Р№РґРµРЅ');
+  Writeln('РќР°Р¶РјРёС‚Рµ Enter РґР»СЏ РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ...');
   Readln;
 end;
 
@@ -448,20 +466,20 @@ var
   current: PEmployeeNode;
   name: string[50];
 begin
-  Writeln('=== Удаление данных ===');
+  Writeln('=== РЈРґР°Р»РµРЅРёРµ РґР°РЅРЅС‹С… ===');
 
-  Writeln('1. Удаление по ФИО');
-  Writeln('2. Удаление по коду');
-  Writeln('0. Назад');
-  Write('Выберите: ');
+  Writeln('1. РЈРґР°Р»РµРЅРёРµ РїРѕ Р¤РРћ');
+  Writeln('2. РЈРґР°Р»РµРЅРёРµ РїРѕ РєРѕРґСѓ');
+  Writeln('0. РќР°Р·Р°Рґ');
+  Write('Р’С‹Р±РµСЂРёС‚Рµ: ');
 
   choice := ReadInt;
   if choice <> 0 then
   begin
     if choice = 1 then
     begin
-      write('Введите ФИО: ');
-      name := ReadStr;
+      write('Р’РІРµРґРёС‚Рµ Р¤РРћ: ');
+      name := ShortString(ReadStr());
       current := EmployeesHead;
       while current <> nil do
       begin
@@ -469,6 +487,7 @@ begin
         begin
           ViewEmployee(current);
         end;
+        current := current^.Next;
       end;
     end;
     DeleteEmployeeByCode(EmployeesHead);
@@ -481,8 +500,8 @@ var
   current, prev: PProjectNode;
   found: Boolean;
 begin
-  Write('Введите название проекта для удаления: ');
-  name := ReadStr;
+  Write('Р’РІРµРґРёС‚Рµ РЅР°Р·РІР°РЅРёРµ РїСЂРѕРµРєС‚Р° РґР»СЏ СѓРґР°Р»РµРЅРёСЏ: ');
+  name := ShortString(ReadStr());
 
   current := ProjectsHead;
   prev := nil;
@@ -508,10 +527,10 @@ begin
   end;
 
   if found then
-    Writeln('Проект удален')
+    Writeln('РџСЂРѕРµРєС‚ СѓРґР°Р»РµРЅ')
   else
-    Writeln('Проект не найден');
-  Writeln('Нажмите Enter для продолжения...');
+    Writeln('РџСЂРѕРµРєС‚ РЅРµ РЅР°Р№РґРµРЅ');
+  Writeln('РќР°Р¶РјРёС‚Рµ Enter РґР»СЏ РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ...');
   Readln;
 end;
 
@@ -519,12 +538,12 @@ procedure DeleteData(var EmployeesHead: PEmployeeNode; var ProjectssHead: PProje
 var
   choice: integer;
 begin
-  Writeln('=== Удаление данных ===');
+  Writeln('=== РЈРґР°Р»РµРЅРёРµ РґР°РЅРЅС‹С… ===');
 
-  Writeln('1. Удаление сотрудников');
-  Writeln('2. Удаление проектов');
-  Writeln('0. Назад');
-  Write('Выберите: ');
+  Writeln('1. РЈРґР°Р»РµРЅРёРµ СЃРѕС‚СЂСѓРґРЅРёРєРѕРІ');
+  Writeln('2. РЈРґР°Р»РµРЅРёРµ РїСЂРѕРµРєС‚РѕРІ');
+  Writeln('0. РќР°Р·Р°Рґ');
+  Write('Р’С‹Р±РµСЂРёС‚Рµ: ');
   choice := readInt;
   case choice of
     0:
@@ -555,24 +574,24 @@ end;
 procedure EditEmployee(var EmployeesHead: PEmployeeNode);
 var
   code: integer;
-  found, waschange: boolean;
+  found, waschange, secondIter: boolean;
   current: PEmployeeNode;
   choice: integer;
   name: string[50];
 begin
 
-  Writeln('1. Редактирование по ФИО');
-  Writeln('2. Редактирование по коду');
-  Writeln('0. Назад');
-  Write('Выберите: ');
+  Writeln('1. Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ РїРѕ Р¤РРћ');
+  Writeln('2. Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ РїРѕ РєРѕРґСѓ');
+  Writeln('0. РќР°Р·Р°Рґ');
+  Write('Р’С‹Р±РµСЂРёС‚Рµ: ');
 
   choice := ReadInt;
   if choice <> 0 then
   begin
     if choice = 1 then
     begin
-      write('Введите ФИО: ');
-      name := ReadStr;
+      write('Р’РІРµРґРёС‚Рµ Р¤РРћ: ');
+      name := ShortString(ReadStr());
       current := EmployeesHead;
       while current <> nil do
       begin
@@ -584,7 +603,7 @@ begin
       end;
     end;
 
-    Write('Введите код сотрудника, которого необходимо изменить: ');
+    Write('Р’РІРµРґРёС‚Рµ РєРѕРґ СЃРѕС‚СЂСѓРґРЅРёРєР°, РєРѕС‚РѕСЂРѕРіРѕ РЅРµРѕР±С…РѕРґРёРјРѕ РёР·РјРµРЅРёС‚СЊ: ');
     code := ReadInt;
 
     current := EmployeesHead;
@@ -596,12 +615,12 @@ begin
       if current^.Data.Code = code then
       begin
         clearScreen;
-        writeln('Введите номер параметра, который нужно изменить');
-        writeln('1. ФИО');
-        writeln('2. Должность');
-        writeln('3. Часов в день');
-        writeln('4. Код руководителя');
-        writeln('0. Выход');
+        writeln('Р’РІРµРґРёС‚Рµ РЅРѕРјРµСЂ РїР°СЂР°РјРµС‚СЂР°, РєРѕС‚РѕСЂС‹Р№ РЅСѓР¶РЅРѕ РёР·РјРµРЅРёС‚СЊ');
+        writeln('1. Р¤РРћ');
+        writeln('2. Р”РѕР»Р¶РЅРѕСЃС‚СЊ');
+        writeln('3. Р§Р°СЃРѕРІ РІ РґРµРЅСЊ');
+        writeln('4. РљРѕРґ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ');
+        writeln('0. Р’С‹С…РѕРґ');
         choice := ReadInt;
 
         case choice of
@@ -611,31 +630,39 @@ begin
             end;
           1:
             begin
-              Write('Новое ФИО: ');
-              current^.Data.Name := ReadStr;
+              Write('РќРѕРІРѕРµ Р¤РРћ: ');
+              current^.Data.Name := ShortString(ReadStr());
               waschange := true;
             end;
           2:
             begin
-              Write('Новая должность: ');
-              current^.Data.Position := ReadStr;
+              Write('РќРѕРІР°СЏ РґРѕР»Р¶РЅРѕСЃС‚СЊ: ');
+              current^.Data.Position := ShortString(ReadStr());
               waschange := true;
             end;
           3:
             begin
-              Write('Новое значение окличества рабочих часов в день: ');
-              current^.Data.HoursPerDay := readInt;
+              Write('РќРѕРІРѕРµ Р·РЅР°С‡РµРЅРёРµ РѕРєР»РёС‡РµСЃС‚РІР° СЂР°Р±РѕС‡РёС… С‡Р°СЃРѕРІ РІ РґРµРЅСЊ: ');
+              secondIter := false;
+              repeat
+                if secondIter then
+                begin
+                  write('РћС€РёР±РєР°. Р§РёСЃР»Рѕ РґРѕР»Р¶РЅРѕ Р±С‹С‚СЊ РѕС‚ 0 РґРѕ 24: ')
+                end;
+                current^.Data.HoursPerDay := readInt;
+                secondIter := true;
+              until (current^.Data.HoursPerDay >= 0) and (current^.Data.HoursPerDay <= 24);
               waschange := true;
             end;
           4:
             begin
-              Write('Новый код руководителя: ');
+              Write('РќРѕРІС‹Р№ РєРѕРґ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ: ');
               current^.Data.ManagerCode := readInt;
               waschange := true;
             end;
           else
             begin
-              writeln('Нажата неверная клавиша. Выход');
+              writeln('РќР°Р¶Р°С‚Р° РЅРµРІРµСЂРЅР°СЏ РєР»Р°РІРёС€Р°. Р’С‹С…РѕРґ');
             end;
         end;
         Found := true;
@@ -648,12 +675,12 @@ begin
 
     if found then
       if wasChange then
-        Writeln('Данные сотрудника изменены')
+        Writeln('Р”Р°РЅРЅС‹Рµ СЃРѕС‚СЂСѓРґРЅРёРєР° РёР·РјРµРЅРµРЅС‹')
       else
-        Writeln('Данные сотрудника не были изменены')
+        Writeln('Р”Р°РЅРЅС‹Рµ СЃРѕС‚СЂСѓРґРЅРёРєР° РЅРµ Р±С‹Р»Рё РёР·РјРµРЅРµРЅС‹')
     else
-      Writeln('Сотрудник не найден');
-    Writeln('Нажмите Enter для продолжения...');
+      Writeln('РЎРѕС‚СЂСѓРґРЅРёРє РЅРµ РЅР°Р№РґРµРЅ');
+    Writeln('РќР°Р¶РјРёС‚Рµ Enter РґР»СЏ РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ...');
     Readln;
   end;
 end;
@@ -665,7 +692,7 @@ var
   current: PProjectNode;
   choice: integer;
 begin
-  Write('Введите название проекта, который необходимо изменить: ');
+  Write('Р’РІРµРґРёС‚Рµ РЅР°Р·РІР°РЅРёРµ РїСЂРѕРµРєС‚Р°, РєРѕС‚РѕСЂС‹Р№ РЅРµРѕР±С…РѕРґРёРјРѕ РёР·РјРµРЅРёС‚СЊ: ');
   readln(name);
 
   current := ProjectsHead;
@@ -677,14 +704,14 @@ begin
     if current^.Data.ProjectName = name then
     begin
       clearScreen;
-      writeln('Введите номер параметра, который нужно изменить');
-      writeln('1. Название');
-      writeln('2. Задача');
-      writeln('3. Исполнитель');
-      writeln('4. Руководитель');
-      writeln('5. Дата выдачи');
-      writeln('6. Срок выполнения');
-      writeln('0. Выход');
+      writeln('Р’РІРµРґРёС‚Рµ РЅРѕРјРµСЂ РїР°СЂР°РјРµС‚СЂР°, РєРѕС‚РѕСЂС‹Р№ РЅСѓР¶РЅРѕ РёР·РјРµРЅРёС‚СЊ');
+      writeln('1. РќР°Р·РІР°РЅРёРµ');
+      writeln('2. Р—Р°РґР°С‡Р°');
+      writeln('3. РСЃРїРѕР»РЅРёС‚РµР»СЊ');
+      writeln('4. Р СѓРєРѕРІРѕРґРёС‚РµР»СЊ');
+      writeln('5. Р”Р°С‚Р° РІС‹РґР°С‡Рё');
+      writeln('6. РЎСЂРѕРє РІС‹РїРѕР»РЅРµРЅРёСЏ');
+      writeln('0. Р’С‹С…РѕРґ');
       choice := ReadInt;
       case choice of
         0:
@@ -693,41 +720,41 @@ begin
           end;
         1:
           begin
-            Write('Новое название проекта: ');
+            Write('РќРѕРІРѕРµ РЅР°Р·РІР°РЅРёРµ РїСЂРѕРµРєС‚Р°: ');
             current^.Data.ProjectName := shortString(getProjName(ProjectsHead));
             wasChange := true;
           end;
         2:
           begin
-            Write('Новая задача: ');
-            current^.Data.Task := ReadStr;
+            Write('РќРѕРІР°СЏ Р·Р°РґР°С‡Р°: ');
+            current^.Data.Task := ShortString(ReadStr());
             wasChange := true;
           end;
         3:
           begin
-            Write('Новый код исполнителя: ');
+            Write('РќРѕРІС‹Р№ РєРѕРґ РёСЃРїРѕР»РЅРёС‚РµР»СЏ: ');
             current^.Data.EmployeeCode := readInt;
             wasChange := true;
           end;
         4:
           begin
-            Write('Новый код руководителя: ');
+            Write('РќРѕРІС‹Р№ РєРѕРґ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ: ');
             current^.Data.ManagerCode := readInt;
             wasChange := true;
           end;
         5:
           begin
-            current^.Data.IssueDate := ReadDate('Новая дата выдачи: ');
+            current^.Data.IssueDate := ReadDate('РќРѕРІР°СЏ РґР°С‚Р° РІС‹РґР°С‡Рё: ');
             wasChange := true;
           end;
         6:
           begin
-            current^.Data.Deadline := ReadDate('Новый срок выполнения: ');
+            current^.Data.Deadline := ReadDate('РќРѕРІС‹Р№ СЃСЂРѕРє РІС‹РїРѕР»РЅРµРЅРёСЏ: ');
             wasChange := true;
           end;
         else
           begin
-            writeln('Нажата неверная клавиша. Выход');
+            writeln('РќР°Р¶Р°С‚Р° РЅРµРІРµСЂРЅР°СЏ РєР»Р°РІРёС€Р°. Р’С‹С…РѕРґ');
           end;
       end;
       Found := true;
@@ -740,12 +767,12 @@ begin
 
   if found then
     if wasChange then
-      Writeln('Проект изменён')
+      Writeln('РџСЂРѕРµРєС‚ РёР·РјРµРЅС‘РЅ')
     else
-      Writeln('Проект не был изменён')
+      Writeln('РџСЂРѕРµРєС‚ РЅРµ Р±С‹Р» РёР·РјРµРЅС‘РЅ')
   else
-    Writeln('Проект не найден');
-  Writeln('Нажмите Enter для продолжения...');
+    Writeln('РџСЂРѕРµРєС‚ РЅРµ РЅР°Р№РґРµРЅ');
+  Writeln('РќР°Р¶РјРёС‚Рµ Enter РґР»СЏ РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ...');
   Readln;
 end;
 
@@ -753,12 +780,12 @@ procedure EditData(var EmployeesHead: PEmployeeNode; var ProjectssHead: PProject
 var
   choice: integer;
 begin
-  Writeln('=== Редактирование данных ===');
+  Writeln('=== Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ РґР°РЅРЅС‹С… ===');
 
-  Writeln('1. Редактирование сотрудников');
-  Writeln('2. Редактирование проектов');
-  Writeln('0. Назад');
-  Write('Выберите: ');
+  Writeln('1. Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ СЃРѕС‚СЂСѓРґРЅРёРєРѕРІ');
+  Writeln('2. Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ РїСЂРѕРµРєС‚РѕРІ');
+  Writeln('0. РќР°Р·Р°Рґ');
+  Write('Р’С‹Р±РµСЂРёС‚Рµ: ');
   choice := readInt;
   case choice of
     0:
@@ -795,14 +822,14 @@ var
   HasData: Boolean;
   ProjectsEmpty: Boolean;
 begin
-  Writeln('1. Список задач по проекту');
-  Writeln('2. Задачи с ближайшим сроком (месяц)');
-  Writeln('0. Назад');
-  Write('Выберите функцию: ');
+  Writeln('1. РЎРїРёСЃРѕРє Р·Р°РґР°С‡ РїРѕ РїСЂРѕРµРєС‚Сѓ');
+  Writeln('2. Р—Р°РґР°С‡Рё СЃ Р±Р»РёР¶Р°Р№С€РёРј СЃСЂРѕРєРѕРј (РјРµСЃСЏС†)');
+  Writeln('0. РќР°Р·Р°Рґ');
+  Write('Р’С‹Р±РµСЂРёС‚Рµ С„СѓРЅРєС†РёСЋ: ');
   Choice := readInt;
   if (Choice < 0) or (Choice > 2) then
   begin
-    writeln('Нажата неверная клавиша. Совершен выход. Нажмите Enter для продолжения');
+    writeln('РќР°Р¶Р°С‚Р° РЅРµРІРµСЂРЅР°СЏ РєР»Р°РІРёС€Р°. РЎРѕРІРµСЂС€РµРЅ РІС‹С…РѕРґ. РќР°Р¶РјРёС‚Рµ Enter РґР»СЏ РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ');
     readln;
   end;
 
@@ -811,8 +838,8 @@ begin
     ProjectsEmpty := (ProjectsHead = nil);
     if not ProjectsEmpty then
     begin
-      Write('Введите название проекта: ');
-      ProjectName := ReadStr;
+      Write('Р’РІРµРґРёС‚Рµ РЅР°Р·РІР°РЅРёРµ РїСЂРѕРµРєС‚Р°: ');
+      ProjectName := ShortString(ReadStr());
       AssignFile(OutputFile, 'project_tasks.txt');
       Rewrite(OutputFile);
 
@@ -822,10 +849,10 @@ begin
       begin
         if CurrentProj^.Data.ProjectName = ProjectName then
         begin
-          write('Задачи: ');
+          write('Р—Р°РґР°С‡Рё: ');
           writeln(CurrentProj^.Data.Task);
 
-          write(OutputFile, 'Задачи: ');
+          write(OutputFile, 'Р—Р°РґР°С‡Рё: ');
           writeln(OutputFile, CurrentProj^.Data.Task);
           //ViewProject(CurrentProj);
           HasData := True;
@@ -834,13 +861,13 @@ begin
       end;
 
       if not HasData then
-        Writeln('Проект не найден');
+        Writeln('РџСЂРѕРµРєС‚ РЅРµ РЅР°Р№РґРµРЅ');
 
       CloseFile(OutputFile);
 
     end
     else
-      Writeln('Список проектов пуст!');
+      Writeln('РЎРїРёСЃРѕРє РїСЂРѕРµРєС‚РѕРІ РїСѓСЃС‚!');
   end
   else if Choice = 2 then
   begin
@@ -865,16 +892,16 @@ begin
       end;
 
       if not HasData then
-        Writeln('Нет задач с ближайшим сроком');
+        Writeln('РќРµС‚ Р·Р°РґР°С‡ СЃ Р±Р»РёР¶Р°Р№С€РёРј СЃСЂРѕРєРѕРј');
       CloseFile(OutputFile);
     end
     else
-      Writeln('Список проектов пуст!');
+      Writeln('РЎРїРёСЃРѕРє РїСЂРѕРµРєС‚РѕРІ РїСѓСЃС‚!');
   end;
 
   if (Choice = 1) or (Choice = 2) then
   begin
-    Write('Нажмите Enter...');
+    Write('РќР°Р¶РјРёС‚Рµ Enter...');
     Readln;
   end;
 end;
@@ -886,15 +913,15 @@ procedure exitConfirm(var quit: boolean);
 var
   Choice: integer;
 begin
-  writeln('Дейстыительно хотите выйти без сохранения?');
-  Writeln('1. Да');
-  Writeln('2. Нет');
-  Writeln('0. Назад');
-  Write('Выберите: ');
+  writeln('Р”РµР№СЃС‚С‹РёС‚РµР»СЊРЅРѕ С…РѕС‚РёС‚Рµ РІС‹Р№С‚Рё Р±РµР· СЃРѕС…СЂР°РЅРµРЅРёСЏ?');
+  Writeln('1. Р”Р°');
+  Writeln('2. РќРµС‚');
+  Writeln('0. РќР°Р·Р°Рґ');
+  Write('Р’С‹Р±РµСЂРёС‚Рµ: ');
   Choice := readInt;
   if (Choice < 0) or (Choice > 2) then
   begin
-    writeln('Нажата неверная клавиша. Действие отменено. Нажмите Enter для продолжения');
+    writeln('РќР°Р¶Р°С‚Р° РЅРµРІРµСЂРЅР°СЏ РєР»Р°РІРёС€Р°. Р”РµР№СЃС‚РІРёРµ РѕС‚РјРµРЅРµРЅРѕ. РќР°Р¶РјРёС‚Рµ Enter РґР»СЏ РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ');
     readln;
   end;
   if Choice = 1 then
@@ -922,7 +949,7 @@ begin
     esfCode, esfHours, esfManagerCode:
       if not TryStrToInt(Value, SearchCode) then
       begin
-        Writeln('Некорректный формат числа');
+        Writeln('РќРµРєРѕСЂСЂРµРєС‚РЅС‹Р№ С„РѕСЂРјР°С‚ С‡РёСЃР»Р°');
         Quit := true;
       end;
   end;
@@ -970,7 +997,7 @@ begin
     end;
 
     if not Found then
-      Writeln('Сотрудники не найдены');
+      Writeln('РЎРѕС‚СЂСѓРґРЅРёРєРё РЅРµ РЅР°Р№РґРµРЅС‹');
   end;
 end;
 
@@ -992,14 +1019,14 @@ begin
     psfEmployeeCode, psfManagerCode:
       if not TryStrToInt(Value, SearchCode) then
       begin
-        Writeln('Некорректный формат числа');
+        Writeln('РќРµРєРѕСЂСЂРµРєС‚РЅС‹Р№ С„РѕСЂРјР°С‚ С‡РёСЃР»Р°');
         Quit := true;
       end;
 
     psfIssueDate, psfDeadline:
       if not TryStrToDate(Value, SearchDate) then
       begin
-        Writeln('Некорректный формат даты');
+        Writeln('РќРµРєРѕСЂСЂРµРєС‚РЅС‹Р№ С„РѕСЂРјР°С‚ РґР°С‚С‹');
         Quit := true;
       end;
   end;
@@ -1047,7 +1074,7 @@ begin
     end;
 
     if not Found then
-      Writeln('Проекты не найдены');
+      Writeln('РџСЂРѕРµРєС‚С‹ РЅРµ РЅР°Р№РґРµРЅС‹');
   end;
 end;
 
@@ -1056,7 +1083,7 @@ end;
 procedure SortEmployees(var EmployeesHead: PEmployeeNode;
                         Field: TEmployeeSortField; Direction: TSortDirection);
 var
-  Current, NextNode, prevNode: PEmployeeNode;
+  Current, NextNode, prevNode, temp: PEmployeeNode;
   Swapped: Boolean;
 begin
   if EmployeesHead <> nil then
@@ -1091,9 +1118,17 @@ begin
         if CompareResult > 0 then
         begin
           if prevNode <> nil then
-            prevNode^.Next := NextNode;
+            prevNode^.Next := NextNode
+          else
+            EmployeesHead := NextNode;
+
           Current^.Next := NextNode^.Next;
           NextNode^.Next := Current;
+          temp := Current;
+          Current := NextNode;
+          NextNode := temp;
+          Swapped := true;
+
 //          swap Current and NextNode
 //          Temp := Current^.Data;
 //          Current^.Data := NextNode^.Data;
@@ -1112,7 +1147,7 @@ end;
 procedure SortProjects(var ProjectsHead: PProjectNode;
                       Field: TProjectSortField; Direction: TSortDirection);
 var
-  Current, NextNode, prevNode: PProjectNode;
+  Current, NextNode, prevNode, temp: PProjectNode;
   Swapped: Boolean;
   CompareResult: Integer;
 begin
@@ -1146,14 +1181,21 @@ begin
         if CompareResult > 0 then
         begin
           if prevNode <> nil then
-            prevNode^.Next := NextNode;
+            prevNode^.Next := NextNode
+          else
+            ProjectsHead := NextNode;
+
           Current^.Next := NextNode^.Next;
           NextNode^.Next := Current;
+          temp := Current;
+          Current := NextNode;
+          NextNode := temp;
+          Swapped := true;
         end;
 
-        prevNode := current;
-        current := nextNode;
-        nextNode := nextNode^.Next;
+        prevNode := Current;
+        Current := NextNode;
+        NextNode := NextNode^.Next;
       end;
     until not Swapped;
   end;
@@ -1167,34 +1209,34 @@ var
   Direction: Integer;
 begin
   ClearScreen;
-  Writeln('=== Сортировка данных ===');
+  Writeln('=== РЎРѕСЂС‚РёСЂРѕРІРєР° РґР°РЅРЅС‹С… ===');
 
-  Writeln('1. Сотрудники');
-  Writeln('2. Проекты');
-  Writeln('0. Назад');
-  Write('Выберите список: ');
+  Writeln('1. РЎРѕС‚СЂСѓРґРЅРёРєРё');
+  Writeln('2. РџСЂРѕРµРєС‚С‹');
+  Writeln('0. РќР°Р·Р°Рґ');
+  Write('Р’С‹Р±РµСЂРёС‚Рµ СЃРїРёСЃРѕРє: ');
   SortField := readInt;
 
   if SortField <> 0 then
   begin
 
     ClearScreen;
-    Writeln('Направление сортировки:');
-    Writeln('1. По возрастанию');
-    Writeln('2. По убыванию');
-    Write('Выберите направление: ');
+    Writeln('РќР°РїСЂР°РІР»РµРЅРёРµ СЃРѕСЂС‚РёСЂРѕРІРєРё:');
+    Writeln('1. РџРѕ РІРѕР·СЂР°СЃС‚Р°РЅРёСЋ');
+    Writeln('2. РџРѕ СѓР±С‹РІР°РЅРёСЋ');
+    Write('Р’С‹Р±РµСЂРёС‚Рµ РЅР°РїСЂР°РІР»РµРЅРёРµ: ');
     Direction := readInt;
 
     ClearScreen;
     if SortField = 1 then
     begin
-      Writeln('Параметры сортировки сотрудников:');
-      Writeln('1. Код сотрудника');
-      Writeln('2. ФИО');
-      Writeln('3. Должность');
-      Writeln('4. Рабочие часы');
-      Writeln('5. Код руководителя');
-      Write('Выберите параметр: ');
+      Writeln('РџР°СЂР°РјРµС‚СЂС‹ СЃРѕСЂС‚РёСЂРѕРІРєРё СЃРѕС‚СЂСѓРґРЅРёРєРѕРІ:');
+      Writeln('1. РљРѕРґ СЃРѕС‚СЂСѓРґРЅРёРєР°');
+      Writeln('2. Р¤РРћ');
+      Writeln('3. Р”РѕР»Р¶РЅРѕСЃС‚СЊ');
+      Writeln('4. Р Р°Р±РѕС‡РёРµ С‡Р°СЃС‹');
+      Writeln('5. РљРѕРґ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ');
+      Write('Р’С‹Р±РµСЂРёС‚Рµ РїР°СЂР°РјРµС‚СЂ: ');
       SortField := readInt;
 
       SortEmployees(
@@ -1205,13 +1247,13 @@ begin
     end
     else if SortField = 2 then
     begin
-      Writeln('Параметры сортировки проектов:');
-      Writeln('1. Название проекта');
-      Writeln('2. Код исполнителя');
-      Writeln('3. Код руководителя');
-      Writeln('4. Дата выдачи');
-      Writeln('5. Срок выполнения');
-      Write('Выберите параметр: ');
+      Writeln('РџР°СЂР°РјРµС‚СЂС‹ СЃРѕСЂС‚РёСЂРѕРІРєРё РїСЂРѕРµРєС‚РѕРІ:');
+      Writeln('1. РќР°Р·РІР°РЅРёРµ РїСЂРѕРµРєС‚Р°');
+      Writeln('2. РљРѕРґ РёСЃРїРѕР»РЅРёС‚РµР»СЏ');
+      Writeln('3. РљРѕРґ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ');
+      Writeln('4. Р”Р°С‚Р° РІС‹РґР°С‡Рё');
+      Writeln('5. РЎСЂРѕРє РІС‹РїРѕР»РЅРµРЅРёСЏ');
+      Write('Р’С‹Р±РµСЂРёС‚Рµ РїР°СЂР°РјРµС‚СЂ: ');
       SortField := readInt;
 
       SortProjects(
@@ -1221,8 +1263,8 @@ begin
       );
     end;
     clearScreen;
-    Writeln('Сортировка завершена');
-    Write('Нажмите Enter...');
+    Writeln('РЎРѕСЂС‚РёСЂРѕРІРєР° Р·Р°РІРµСЂС€РµРЅР°');
+    Write('РќР°Р¶РјРёС‚Рµ Enter...');
     Readln;
   end;
 end;
@@ -1233,12 +1275,12 @@ var
   SearchValue: string;
 begin
   ClearScreen;
-  Writeln('=== Поиск данных ===');
+  Writeln('=== РџРѕРёСЃРє РґР°РЅРЅС‹С… ===');
 
-  Writeln('1. Поиск сотрудников');
-  Writeln('2. Поиск проектов');
-  Writeln('3. Назад');
-  Write('Выберите тип поиска: ');
+  Writeln('1. РџРѕРёСЃРє СЃРѕС‚СЂСѓРґРЅРёРєРѕРІ');
+  Writeln('2. РџРѕРёСЃРє РїСЂРѕРµРєС‚РѕРІ');
+  Writeln('3. РќР°Р·Р°Рґ');
+  Write('Р’С‹Р±РµСЂРёС‚Рµ С‚РёРї РїРѕРёСЃРєР°: ');
   Choice := readInt;
 
   if Choice <> 3 then
@@ -1246,38 +1288,38 @@ begin
     ClearScreen;
     if Choice = 1 then
     begin
-      Writeln('Параметры поиска:');
-      Writeln('1. По коду сотрудника');
-      Writeln('2. По ФИО');
-      Writeln('3. По должности');
-      Writeln('4. По рабочим часам');
-      Writeln('5. По коду руководителя');
-      Write('Выберите параметр: ');
+      Writeln('РџР°СЂР°РјРµС‚СЂС‹ РїРѕРёСЃРєР°:');
+      Writeln('1. РџРѕ РєРѕРґСѓ СЃРѕС‚СЂСѓРґРЅРёРєР°');
+      Writeln('2. РџРѕ Р¤РРћ');
+      Writeln('3. РџРѕ РґРѕР»Р¶РЅРѕСЃС‚Рё');
+      Writeln('4. РџРѕ СЂР°Р±РѕС‡РёРј С‡Р°СЃР°Рј');
+      Writeln('5. РџРѕ РєРѕРґСѓ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ');
+      Write('Р’С‹Р±РµСЂРёС‚Рµ РїР°СЂР°РјРµС‚СЂ: ');
       SubChoice := readInt;
 
-      Write('Введите значение для поиска: ');
+      Write('Р’РІРµРґРёС‚Рµ Р·РЅР°С‡РµРЅРёРµ РґР»СЏ РїРѕРёСЃРєР°: ');
       SearchValue := ReadStr;
 
       SearchEmployees(EmployeesHead, TEmployeeSortField(SubChoice - 1), SearchValue);
     end
     else if Choice = 2 then
     begin
-      Writeln('Параметры поиска:');
-      Writeln('1. По названию проекта');
-      Writeln('2. По коду исполнителя');
-      Writeln('3. По коду руководителя');
-      Writeln('4. По дате выдачи');
-      Writeln('5. По сроку выполнения');
-      Write('Выберите параметр: ');
+      Writeln('РџР°СЂР°РјРµС‚СЂС‹ РїРѕРёСЃРєР°:');
+      Writeln('1. РџРѕ РЅР°Р·РІР°РЅРёСЋ РїСЂРѕРµРєС‚Р°');
+      Writeln('2. РџРѕ РєРѕРґСѓ РёСЃРїРѕР»РЅРёС‚РµР»СЏ');
+      Writeln('3. РџРѕ РєРѕРґСѓ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ');
+      Writeln('4. РџРѕ РґР°С‚Рµ РІС‹РґР°С‡Рё');
+      Writeln('5. РџРѕ СЃСЂРѕРєСѓ РІС‹РїРѕР»РЅРµРЅРёСЏ');
+      Write('Р’С‹Р±РµСЂРёС‚Рµ РїР°СЂР°РјРµС‚СЂ: ');
       SubChoice := readInt;
 
-      Write('Введите значение для поиска: ');
+      Write('Р’РІРµРґРёС‚Рµ Р·РЅР°С‡РµРЅРёРµ РґР»СЏ РїРѕРёСЃРєР°: ');
       SearchValue := ReadStr;
 
       SearchProjects(ProjectsHead, TProjectSortField(SubChoice - 1), SearchValue);
     end;
 
-    Write('Нажмите Enter для продолжения...');
+    Write('РќР°Р¶РјРёС‚Рµ Enter РґР»СЏ РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ...');
     Readln;
   end;
 end;
@@ -1286,10 +1328,10 @@ procedure SubMenu(const Title: string; var Choice: Integer);
 begin
   ClearScreen;
   Writeln(Title);
-  Writeln('1. Сотрудники');
-  Writeln('2. Проекты');
-  Writeln('0. Назад');
-  Write('Выберите: ');
+  Writeln('1. РЎРѕС‚СЂСѓРґРЅРёРєРё');
+  Writeln('2. РџСЂРѕРµРєС‚С‹');
+  Writeln('0. РќР°Р·Р°Рґ');
+  Write('Р’С‹Р±РµСЂРёС‚Рµ: ');
   Choice := readInt;
 end;
 
@@ -1302,35 +1344,35 @@ begin
   quit := false;
   repeat
     ClearScreen;
-    Writeln('1. Чтение данных');
-    Writeln('2. Просмотр данных');
-    Writeln('3. Сортировка');
-    Writeln('4. Поиск');
-    Writeln('5. Добавление');
-    Writeln('6. Удаление');
-    Writeln('7. Редактирование');
-    Writeln('8. Список задач по проекту / задачи с ближайшим сроком (месяц)');
-    Writeln('9. Выход без сохранения');
-    Writeln('10. Выход с сохранением');
-    Write('Выберите пункт: ');
+    Writeln('1. Р§С‚РµРЅРёРµ РґР°РЅРЅС‹С…');
+    Writeln('2. РџСЂРѕСЃРјРѕС‚СЂ РґР°РЅРЅС‹С…');
+    Writeln('3. РЎРѕСЂС‚РёСЂРѕРІРєР°');
+    Writeln('4. РџРѕРёСЃРє');
+    Writeln('5. Р”РѕР±Р°РІР»РµРЅРёРµ');
+    Writeln('6. РЈРґР°Р»РµРЅРёРµ');
+    Writeln('7. Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ');
+    Writeln('8. РЎРїРёСЃРѕРє Р·Р°РґР°С‡ РїРѕ РїСЂРѕРµРєС‚Сѓ / Р·Р°РґР°С‡Рё СЃ Р±Р»РёР¶Р°Р№С€РёРј СЃСЂРѕРєРѕРј (РјРµСЃСЏС†)');
+    Writeln('9. Р’С‹С…РѕРґ Р±РµР· СЃРѕС…СЂР°РЅРµРЅРёСЏ');
+    Writeln('10. Р’С‹С…РѕРґ СЃ СЃРѕС…СЂР°РЅРµРЅРёРµРј');
+    Write('Р’С‹Р±РµСЂРёС‚Рµ РїСѓРЅРєС‚: ');
     Choice := readInt;
 
     case Choice of
-      1: LoadData(EmployeesHead, ProjectsHead);
+      1: LoadData(EmployeesHead, ProjectsHead, empCode);
       2:
         begin
-          SubMenu('Просмотр данных', SubChoice);
+          SubMenu('РџСЂРѕСЃРјРѕС‚СЂ РґР°РЅРЅС‹С…', SubChoice);
           clearScreen;
           case SubChoice of
             1:
               begin
                 ViewEmployees(EmployeesHead);
-                Write('Нажмите Enter...'); Readln;
+                Write('РќР°Р¶РјРёС‚Рµ Enter...'); Readln;
               end;
             2:
               begin
                 ViewProjects(ProjectsHead);
-                Write('Нажмите Enter...'); Readln;
+                Write('РќР°Р¶РјРёС‚Рµ Enter...'); Readln;
               end;
           end;
         end;
@@ -1338,7 +1380,7 @@ begin
       4: SearchMenu(ProjectsHead, EmployeesHead);
       5:
         begin
-          SubMenu('Добавление данных', SubChoice);
+          SubMenu('Р”РѕР±Р°РІР»РµРЅРёРµ РґР°РЅРЅС‹С…', SubChoice);
           case SubChoice of
             0:
               begin
@@ -1347,18 +1389,18 @@ begin
             1:
               begin
                 AddEmployee(EmployeesHead, empCode);
-                writeln('Данные успешно добавлены! Нажмите Enter...');
+                writeln('Р”Р°РЅРЅС‹Рµ СѓСЃРїРµС€РЅРѕ РґРѕР±Р°РІР»РµРЅС‹! РќР°Р¶РјРёС‚Рµ Enter...');
                 readln;
               end;
             2:
               begin
                 AddProject(ProjectsHead, empCode);
-                writeln('Данные успешно добавлены! Нажмите Enter...');
+                writeln('Р”Р°РЅРЅС‹Рµ СѓСЃРїРµС€РЅРѕ РґРѕР±Р°РІР»РµРЅС‹! РќР°Р¶РјРёС‚Рµ Enter...');
                 readln;
               end;
             else
               begin
-                writeln('Нажата неверная клавиша. Нажмите Enter...');
+                writeln('РќР°Р¶Р°С‚Р° РЅРµРІРµСЂРЅР°СЏ РєР»Р°РІРёС€Р°. РќР°Р¶РјРёС‚Рµ Enter...');
                 readln;
               end;
           end;
