@@ -267,6 +267,7 @@ end;
 procedure ViewEmployees(const EmployeesHead: PEmployeeNode);
 var
   current: PEmployeeNode;
+
 begin
   current := EmployeesHead;
   if current = nil then
@@ -486,6 +487,7 @@ begin
         begin
           ViewEmployee(current);
         end;
+        current := current^.Next;
       end;
     end;
     DeleteEmployeeByCode(EmployeesHead);

@@ -92,31 +92,51 @@ begin
   Result := res;
 end;
 
-function ReadEmpCode(const Head: PEmployeeNode): integer;
+function ReadStr: string;
 var
-  isCorrect, used: boolean;
-  curCode: integer;
-  curNode: PEmployeeNode;
+  str: string;
+  secondIter: boolean;
 begin
-  isCorrect := false;
+  secondIter := false;
   repeat
-    curCode := readInt;
-    used := false;
-    curNode := Head;
-    while curNode <> nil do
-      if (curNode^.Data.Code = curCode) then
-        used := true;
-    if used then
+    if secondIter then
     begin
-      Write('Такой код уже существует. Введите другой: ');
-    end
-    else
-    begin
-      isCorrect := true;
+      writeln;
+      writeln('Строка должна содержать не менее одного символа!');
+      write('Повторите ввод: ');
     end;
-  until isCorrect;
-  Result := curCode;
+    readln(str);
+    str := trim(str);
+    secondIter := true;
+  until (Length(str) > 0);
+  Result := str;
 end;
+
+//function ReadEmpCode(const Head: PEmployeeNode): integer;
+//var
+//  isCorrect, used: boolean;
+//  curCode: integer;
+//  curNode: PEmployeeNode;
+//begin
+//  isCorrect := false;
+//  repeat
+//    curCode := readInt;
+//    used := false;
+//    curNode := Head;
+//    while curNode <> nil do
+//      if (curNode^.Data.Code = curCode) then
+//        used := true;
+//    if used then
+//    begin
+//      Write('Такой код уже существует. Введите другой: ');
+//    end
+//    else
+//    begin
+//      isCorrect := true;
+//    end;
+//  until isCorrect;
+//  Result := curCode;
+//end;
 
 //Clear memory
 
@@ -151,7 +171,8 @@ end;
 
 //Files
 
-procedure LoadData(var EmployeesHead: PEmployeeNode; var ProjectsHead: PProjectNode);
+procedure LoadData(var EmployeesHead: PEmployeeNode; var ProjectsHead: PProjectNode;
+                  var empCode: integer);
 var
   FEmployees: file of TEmployee;
   FProjects: file of TProject;
@@ -168,6 +189,7 @@ begin
     Reset(FEmployees);
     while not Eof(FEmployees) do
     begin
+      empCode := empCode + 1;
       Read(FEmployees, Emp);
       New(NewNodeEmp);
       NewNodeEmp^.Data := emp;
@@ -316,7 +338,7 @@ begin
   repeat
     if secondIter then
       write('Проект с таким названием уже существует. Введите другое название:');
-    readln(name);
+    name := ShortString(ReadStr());
 
     current := ProjectsHead;
     used := false;
@@ -324,6 +346,7 @@ begin
     begin
       if current^.Data.ProjectName = name then
         used := true;
+      current := current^.Next;
     end;
     secondIter := true;
   until not used;
@@ -334,12 +357,23 @@ procedure AddEmployee(var EmployeesHead: PEmployeeNode; var empCode: integer);
 var
   emp: TEmployee;
   newNode: PEmployeeNode;
+  secondIter: boolean;
 begin
   Writeln('Добавление сотрудника:');
   emp.Code := genCode(empCode);//emp.Code := readEmpCode(EmployeesHead);
-  Write('ФИО: '); Readln(emp.Name);
-  Write('Должность: '); Readln(emp.Position);
-  Write('Часов в день: '); emp.HoursPerDay := readInt;
+  Write('ФИО: '); emp.Name := ShortString(ReadStr());
+  Write('Должность: '); emp.Position := ShortString(ReadStr());
+  secondIter := false;
+  Write('Часов в день: ');
+  repeat
+    if secondIter then
+    begin
+      write('Ошибка. Число должно быть от 0 до 24: ')
+    end;
+    emp.HoursPerDay := readInt;
+    secondIter := true;
+  until (emp.HoursPerDay >= 0) and (emp.HoursPerDay <= 24);
+
   Write('Код руководителя: '); emp.ManagerCode := readInt;
 
   New(newNode);
@@ -357,7 +391,7 @@ begin
 
   Writeln('Добавление проекта:');
   Write('Название проекта: '); proj.ProjectName := shortString(getProjName(ProjectsHead));//Readln(proj.ProjectName);
-  Write('Задача: '); Readln(proj.Task);
+  Write('Задача: '); proj.Task := ShortString(ReadStr());
 
   Write('Код исполнителя: ');
   proj.EmployeeCode := readInt;
@@ -444,7 +478,7 @@ begin
     if choice = 1 then
     begin
       write('Введите ФИО: ');
-      readln(name);
+      name := ShortString(ReadStr());
       current := EmployeesHead;
       while current <> nil do
       begin
@@ -452,6 +486,7 @@ begin
         begin
           ViewEmployee(current);
         end;
+        current := current^.Next;
       end;
     end;
     DeleteEmployeeByCode(EmployeesHead);
@@ -465,7 +500,7 @@ var
   found: Boolean;
 begin
   Write('Введите название проекта для удаления: ');
-  readln(name);
+  name := ShortString(ReadStr());
 
   current := ProjectsHead;
   prev := nil;
@@ -538,7 +573,7 @@ end;
 procedure EditEmployee(var EmployeesHead: PEmployeeNode);
 var
   code: integer;
-  found, waschange: boolean;
+  found, waschange, secondIter: boolean;
   current: PEmployeeNode;
   choice: integer;
   name: string[50];
@@ -555,7 +590,7 @@ begin
     if choice = 1 then
     begin
       write('Введите ФИО: ');
-      readln(name);
+      name := ShortString(ReadStr());
       current := EmployeesHead;
       while current <> nil do
       begin
@@ -572,6 +607,7 @@ begin
 
     current := EmployeesHead;
     Found := False;
+    waschange := false;
 
     while (not Found) and (current <> nil) do
     begin
@@ -585,7 +621,7 @@ begin
         writeln('4. Код руководителя');
         writeln('0. Выход');
         choice := ReadInt;
-        waschange := false;
+
         case choice of
           0:
             begin
@@ -594,19 +630,27 @@ begin
           1:
             begin
               Write('Новое ФИО: ');
-              readln(current^.Data.Name);
+              current^.Data.Name := ShortString(ReadStr());
               waschange := true;
             end;
           2:
             begin
               Write('Новая должность: ');
-              Readln(current^.Data.Position);
+              current^.Data.Position := ShortString(ReadStr());
               waschange := true;
             end;
           3:
             begin
               Write('Новое значение окличества рабочих часов в день: ');
-              current^.Data.HoursPerDay := readInt;
+              secondIter := false;
+              repeat
+                if secondIter then
+                begin
+                  write('Ошибка. Число должно быть от 0 до 24: ')
+                end;
+                current^.Data.HoursPerDay := readInt;
+                secondIter := true;
+              until (current^.Data.HoursPerDay >= 0) and (current^.Data.HoursPerDay <= 24);
               waschange := true;
             end;
           4:
@@ -652,13 +696,13 @@ begin
 
   current := ProjectsHead;
   Found := False;
+  waschange := false;
 
   while (not Found) and (current <> nil) do
   begin
     if current^.Data.ProjectName = name then
     begin
       clearScreen;
-      wasChange := false;
       writeln('Введите номер параметра, который нужно изменить');
       writeln('1. Название');
       writeln('2. Задача');
@@ -682,7 +726,7 @@ begin
         2:
           begin
             Write('Новая задача: ');
-            Readln(current^.Data.Task);
+            current^.Data.Task := ShortString(ReadStr());
             wasChange := true;
           end;
         3:
@@ -739,10 +783,14 @@ begin
 
   Writeln('1. Редактирование сотрудников');
   Writeln('2. Редактирование проектов');
-  Writeln('3. Назад');
+  Writeln('0. Назад');
   Write('Выберите: ');
   choice := readInt;
   case choice of
+    0:
+      begin
+
+      end;
     1:
       begin
         clearScreen;
@@ -752,6 +800,11 @@ begin
       begin
         clearScreen;
         EditProject(ProjectssHead);
+      end;
+    else
+      begin
+        clearScreen;
+        EditData(EmployeesHead, ProjectssHead);
       end;
   end;
 end;
@@ -770,9 +823,14 @@ var
 begin
   Writeln('1. Список задач по проекту');
   Writeln('2. Задачи с ближайшим сроком (месяц)');
-  Writeln('3. Назад');
+  Writeln('0. Назад');
   Write('Выберите функцию: ');
   Choice := readInt;
+  if (Choice < 0) or (Choice > 2) then
+  begin
+    writeln('Нажата неверная клавиша. Совершен выход. Нажмите Enter для продолжения');
+    readln;
+  end;
 
   if Choice = 1 then
   begin
@@ -780,7 +838,7 @@ begin
     if not ProjectsEmpty then
     begin
       Write('Введите название проекта: ');
-      Readln(ProjectName);
+      ProjectName := ShortString(ReadStr());
       AssignFile(OutputFile, 'project_tasks.txt');
       Rewrite(OutputFile);
 
@@ -857,9 +915,14 @@ begin
   writeln('Дейстыительно хотите выйти без сохранения?');
   Writeln('1. Да');
   Writeln('2. Нет');
-  Writeln('3. Назад');
+  Writeln('0. Назад');
   Write('Выберите: ');
   Choice := readInt;
+  if (Choice < 0) or (Choice > 2) then
+  begin
+    writeln('Нажата неверная клавиша. Действие отменено. Нажмите Enter для продолжения');
+    readln;
+  end;
   if Choice = 1 then
   begin
     quit := true;
@@ -1019,7 +1082,7 @@ end;
 procedure SortEmployees(var EmployeesHead: PEmployeeNode;
                         Field: TEmployeeSortField; Direction: TSortDirection);
 var
-  Current, NextNode, prevNode: PEmployeeNode;
+  Current, NextNode, prevNode, temp: PEmployeeNode;
   Swapped: Boolean;
 begin
   if EmployeesHead <> nil then
@@ -1054,9 +1117,17 @@ begin
         if CompareResult > 0 then
         begin
           if prevNode <> nil then
-            prevNode^.Next := NextNode;
+            prevNode^.Next := NextNode
+          else
+            EmployeesHead := NextNode;
+
           Current^.Next := NextNode^.Next;
           NextNode^.Next := Current;
+          temp := Current;
+          Current := NextNode;
+          NextNode := temp;
+          Swapped := true;
+
 //          swap Current and NextNode
 //          Temp := Current^.Data;
 //          Current^.Data := NextNode^.Data;
@@ -1075,7 +1146,7 @@ end;
 procedure SortProjects(var ProjectsHead: PProjectNode;
                       Field: TProjectSortField; Direction: TSortDirection);
 var
-  Current, NextNode, prevNode: PProjectNode;
+  Current, NextNode, prevNode, temp: PProjectNode;
   Swapped: Boolean;
   CompareResult: Integer;
 begin
@@ -1109,14 +1180,21 @@ begin
         if CompareResult > 0 then
         begin
           if prevNode <> nil then
-            prevNode^.Next := NextNode;
+            prevNode^.Next := NextNode
+          else
+            ProjectsHead := NextNode;
+
           Current^.Next := NextNode^.Next;
           NextNode^.Next := Current;
+          temp := Current;
+          Current := NextNode;
+          NextNode := temp;
+          Swapped := true;
         end;
 
-        prevNode := current;
-        current := nextNode;
-        nextNode := nextNode^.Next;
+        prevNode := Current;
+        Current := NextNode;
+        NextNode := NextNode^.Next;
       end;
     until not Swapped;
   end;
@@ -1134,11 +1212,11 @@ begin
 
   Writeln('1. Сотрудники');
   Writeln('2. Проекты');
-  Writeln('3. Назад');
+  Writeln('0. Назад');
   Write('Выберите список: ');
   SortField := readInt;
 
-  if SortField <> 3 then
+  if SortField <> 0 then
   begin
 
     ClearScreen;
@@ -1219,7 +1297,7 @@ begin
       SubChoice := readInt;
 
       Write('Введите значение для поиска: ');
-      Readln(SearchValue);
+      SearchValue := ReadStr;
 
       SearchEmployees(EmployeesHead, TEmployeeSortField(SubChoice - 1), SearchValue);
     end
@@ -1235,7 +1313,7 @@ begin
       SubChoice := readInt;
 
       Write('Введите значение для поиска: ');
-      Readln(SearchValue);
+      SearchValue := ReadStr;
 
       SearchProjects(ProjectsHead, TProjectSortField(SubChoice - 1), SearchValue);
     end;
@@ -1251,7 +1329,7 @@ begin
   Writeln(Title);
   Writeln('1. Сотрудники');
   Writeln('2. Проекты');
-  Writeln('3. Назад');
+  Writeln('0. Назад');
   Write('Выберите: ');
   Choice := readInt;
 end;
@@ -1279,7 +1357,7 @@ begin
     Choice := readInt;
 
     case Choice of
-      1: LoadData(EmployeesHead, ProjectsHead);
+      1: LoadData(EmployeesHead, ProjectsHead, empCode);
       2:
         begin
           SubMenu('Просмотр данных', SubChoice);
@@ -1303,11 +1381,30 @@ begin
         begin
           SubMenu('Добавление данных', SubChoice);
           case SubChoice of
-            1: AddEmployee(EmployeesHead, empCode);
-            2: AddProject(ProjectsHead, empCode);
+            0:
+              begin
+
+              end;
+            1:
+              begin
+                AddEmployee(EmployeesHead, empCode);
+                writeln('Данные успешно добавлены! Нажмите Enter...');
+                readln;
+              end;
+            2:
+              begin
+                AddProject(ProjectsHead, empCode);
+                writeln('Данные успешно добавлены! Нажмите Enter...');
+                readln;
+              end;
+            else
+              begin
+                writeln('Нажата неверная клавиша. Нажмите Enter...');
+                readln;
+              end;
           end;
-          writeln('Данные успешно добавлены! Нажмите Enter...');
-          readln;
+
+
         end;
       6:
         begin
@@ -1342,5 +1439,3 @@ begin
   empCode := 1;
   ShowMenu(EmployeesHead, ProjectsHead, empCode);
 end.
-
-// TODO edit menu (№8). Fix save
