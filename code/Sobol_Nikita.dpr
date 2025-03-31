@@ -43,7 +43,7 @@ type
 var
   EmployeesHead: PEmployeeNode = nil;
   ProjectsHead: PProjectNode = nil;
-
+  empCode: integer;
 
 procedure ClearScreen;
 var
@@ -276,13 +276,43 @@ end;
 
 // Add data
 
-procedure AddEmployee(var EmployeesHead: PEmployeeNode);
+function genCode(var empCode: integer): integer;
+begin
+  Result := empCode;
+  empCode := empCode + 1;
+end;
+
+function getProjName(var ProjectsHead: PProjectNode): string;
+var
+  used, secondIter: boolean;
+  name: string[50];
+  current: PProjectNode;
+begin
+  secondIter := false;
+  repeat
+    if secondIter then
+      write('Проект с таким названием уже существует. Введите другое название:');
+    readln(name);
+
+    current := ProjectsHead;
+    used := false;
+    while current <> nil do
+    begin
+      if current^.Data.ProjectName = name then
+        used := true;
+    end;
+    secondIter := true;
+  until not used;
+  Result := name;
+end;
+
+procedure AddEmployee(var EmployeesHead: PEmployeeNode; var empCode: integer);
 var
   emp: TEmployee;
   newNode: PEmployeeNode;
 begin
   Writeln('Добавление сотрудника:');
-  Write('Код: '); emp.Code := readEmpCode(EmployeesHead);
+  Write('Код: '); emp.Code := genCode(empCode);//emp.Code := readEmpCode(EmployeesHead);
   Write('ФИО: '); Readln(emp.Name);
   Write('Должность: '); Readln(emp.Position);
   Write('Часов в день: '); emp.HoursPerDay := readInt;
@@ -300,7 +330,7 @@ var
   newNode: PProjectNode;
 begin
   Writeln('Добавление проекта:');
-  Write('Название проекта: '); Readln(proj.ProjectName);
+  Write('Название проекта: '); proj.ProjectName := getProjName(ProjectsHead);//Readln(proj.ProjectName);
   Write('Задача: '); Readln(proj.Task);
   Write('Код исполнителя: '); proj.EmployeeCode := readInt;
   Write('Код руководителя: '); proj.ManagerCode := readInt;
@@ -353,10 +383,237 @@ begin
     Writeln('Сотрудник удален')
   else
     Writeln('Сотрудник не найден');
-  Writeln('Нажмите любую  клавишу для продолжения...');
+  Writeln('Нажмите Enter для продолжения...');
   Readln;
 end;
 
+procedure DeleteProject(var ProjectssHead: PProjectNode);
+var
+  name: string[50];
+  current, prev: PProjectNode;
+  found: Boolean;
+begin
+  Write('Введите название проекта для удаления: ');
+  readln(name);
+
+  current := ProjectssHead;
+  prev := nil;
+  Found := False;
+
+  while (not Found) and (current <> nil) do
+  begin
+    if current^.Data.ProjectName = name then
+    begin
+      if prev = nil then
+        ProjectssHead := current^.Next
+      else
+        prev^.Next := current^.Next;
+
+      Dispose(current);
+      found := True;
+    end
+    else
+    begin
+      prev := current;
+      current := current^.Next;
+    end;
+  end;
+
+  if found then
+    Writeln('Проект удален')
+  else
+    Writeln('Проект не найден');
+  Writeln('Нажмите Enter для продолжения...');
+  Readln;
+end;
+
+procedure DeleteData(var EmployeesHead: PEmployeeNode; var ProjectssHead: PProjectNode);
+var
+  choice: integer;
+begin
+  Writeln('=== Удаление данных ===');
+
+  Writeln('1. Удаление сотрудников');
+  Writeln('2. Удаление проектов');
+  Writeln('3. Назад');
+  Write('Выберите: ');
+  choice := readInt;
+  case choice of
+    1:
+      begin
+        clearScreen;
+        DeleteEmployee(EmployeesHead);
+      end;
+    2:
+      begin
+        clearScreen;
+        DeleteProject(ProjectssHead);
+      end;
+  end;
+end;
+
+// Edit data
+
+procedure EditEmployee(var EmployeesHead: PEmployeeNode);
+var
+  code: integer;
+  found: Boolean;
+  current: PEmployeeNode;
+  choice: integer;
+begin
+  Write('Введите код сотрудника, которого необходимо изменить: ');
+  code := ReadInt;
+
+  current := EmployeesHead;
+  Found := False;
+
+  while (not Found) and (current <> nil) do
+  begin
+    if current^.Data.Code = code then
+    begin
+      clearScreen;
+      writeln('Введите номер параметра, который нужно изменить');
+      writeln('1. ФИО');
+      writeln('2. Должность');
+      writeln('3. Часов в день');
+      writeln('4. Код руководителя');
+      writeln('5. Выход');
+      choice := ReadInt;
+      case choice of
+        1:
+          begin
+            Write('Новое ФИО: ');
+            readln(current^.Data.Name);
+          end;
+        2:
+          begin
+            Write('Новая должность: ');
+            Readln(current^.Data.Position);
+          end;
+        3:
+          begin
+            Write('Новое значение окличества рабочих часов в день: ');
+            current^.Data.HoursPerDay := readInt;
+          end;
+        4:
+          begin
+            Write('Новый код руководителя: ');
+            current^.Data.ManagerCode := readInt;
+          end;
+      end;
+      Found := true;
+    end
+    else
+    begin
+      current := current^.next;
+    end;
+  end;
+
+  if found then
+    Writeln('Проект Изменён')
+  else
+    Writeln('Проект не найден');
+  Writeln('Нажмите Enter для продолжения...');
+  Readln;
+end;
+
+procedure EditProject(var ProjectsHead: PProjectNode);
+var
+  name: string[50];
+  found: Boolean;
+  current: PProjectNode;
+  choice: integer;
+begin
+  Write('Введите название проекта, который необходимо изменить: ');
+  readln(name);
+
+  current := ProjectsHead;
+  Found := False;
+
+  while (not Found) and (current <> nil) do
+  begin
+    if current^.Data.ProjectName = name then
+    begin
+      clearScreen;
+      writeln('Введите номер параметра, который нужно изменить');
+      writeln('1. Название');
+      writeln('2. Задача');
+      writeln('3. Исполнитель');
+      writeln('4. Руководитель');
+      writeln('5. Дата выдачи');
+      writeln('6. Срок выполнения');
+      writeln('7. Выход');
+      choice := ReadInt;
+      case choice of
+        1:
+          begin
+            Write('Новое название проекта: ');
+            current^.Data.ProjectName := getProjName(ProjectsHead);
+          end;
+        2:
+          begin
+            Write('Новая задача: ');
+            Readln(current^.Data.Task);
+          end;
+        3:
+          begin
+            Write('Новый код исполнителя: ');
+            current^.Data.EmployeeCode := readInt;
+          end;
+        4:
+          begin
+            Write('Новый код руководителя: ');
+            current^.Data.ManagerCode := readInt;
+          end;
+        5:
+          begin
+            current^.Data.IssueDate := ReadDate('Новая дата выдачи: ');
+          end;
+        6:
+          begin
+            current^.Data.Deadline := ReadDate('Новый срок выполнения: ');
+          end;
+      end;
+      Found := true;
+    end
+    else
+    begin
+      current := current^.next;
+    end;
+  end;
+
+  if found then
+    Writeln('Проект Изменён')
+  else
+    Writeln('Проект не найден');
+  Writeln('Нажмите Enter для продолжения...');
+  Readln;
+end;
+
+procedure EditData(var EmployeesHead: PEmployeeNode; var ProjectssHead: PProjectNode);
+var
+  choice: integer;
+begin
+  Writeln('=== Редактирование данных ===');
+
+  Writeln('1. Удаление сотрудников');
+  Writeln('2. Удаление проектов');
+  Writeln('3. Назад');
+  Write('Выберите: ');
+  choice := readInt;
+  case choice of
+    1:
+      begin
+        clearScreen;
+        EditEmployee(EmployeesHead);
+      end;
+    2:
+      begin
+        clearScreen;
+        EditProject(ProjectssHead);
+      end;
+  end;
+end;
 
 // Special func
 
@@ -370,7 +627,6 @@ var
   HasData: Boolean;
   ProjectsEmpty: Boolean;
 begin
-  ClearScreen;
   Writeln('1. Список задач по проекту');
   Writeln('2. Задачи с ближайшим сроком (месяц)');
   Writeln('3. Назад');
@@ -476,7 +732,6 @@ begin
   Found := False;
   Quit := false;
 
-  // Преобразование значения в нужный тип
   case Field of
     esfCode, esfHours, esfManagerCode:
       if not TryStrToInt(Value, SearchCode) then
@@ -547,7 +802,6 @@ begin
   Found := False;
   Quit := false;
 
-  // Преобразование значения в нужный тип
   case Field of
     psfEmployeeCode, psfManagerCode:
       if not TryStrToInt(Value, SearchCode) then
@@ -740,7 +994,6 @@ begin
     Write('Выберите направление: ');
     Direction := readInt;
 
-    // Выбор параметра
     ClearScreen;
     if SortField = 1 then
     begin
@@ -797,7 +1050,7 @@ begin
   Write('Выберите тип поиска: ');
   Choice := readInt;
 
-  if Choice = 3 then
+  if Choice <> 3 then
   begin
     ClearScreen;
     if Choice = 1 then
@@ -849,7 +1102,8 @@ begin
   Choice := readInt;
 end;
 
-procedure ShowMenu(EmployeesHead: PEmployeeNode; ProjectsHead: PProjectNode);
+procedure ShowMenu(EmployeesHead: PEmployeeNode;
+                    ProjectsHead: PProjectNode; var empCode: integer);
 var
   Choice, SubChoice: Integer;
   quit: boolean;
@@ -894,13 +1148,22 @@ begin
         begin
           SubMenu('Добавление данных', SubChoice);
           case SubChoice of
-            1: AddEmployee(EmployeesHead);
+            1: AddEmployee(EmployeesHead, empCode);
             2: AddProject(ProjectsHead);
           end;
           writeln('Данные успешно добавлены! Нажмите Enter...');
           readln;
         end;
-      6: DeleteEmployee(EmployeesHead);
+      6:
+        begin
+          ClearScreen;
+          DeleteData(EmployeesHead, ProjectsHead);
+        end;
+      7:
+        begin
+          ClearScreen;
+          EditData(EmployeesHead, ProjectsHead);
+        end;
       8:
         begin
           ClearScreen;
@@ -921,6 +1184,6 @@ begin
 end;
 
 begin
-  ShowMenu(EmployeesHead, ProjectsHead);
-  ClearScreen;
+  empCode := 1;
+  ShowMenu(EmployeesHead, ProjectsHead, empCode);
 end.

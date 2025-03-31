@@ -43,7 +43,7 @@ type
 var
   EmployeesHead: PEmployeeNode = nil;
   ProjectsHead: PProjectNode = nil;
-
+  empCode: integer;
 
 procedure ClearScreen;
 var
@@ -60,15 +60,15 @@ end;
 
 function ReadDate(Prompt: string = ''): TDateTime;
 var
-  S: string;
-  Date: TDateTime;
+  s: string;
+  date: TDateTime;
   isCorrect: boolean;
 begin
-  S := '';
+  s := '';
   isCorrect := true;
   repeat
     if not isCorrect then
-      writeln('Неверный формат. Повтрите: ');
+      Writeln('Неверный формат. Повтрите: ');
     Write(Prompt, '(ДД.ММ.ГГГГ): ');
     Readln(S);
     isCorrect := false;
@@ -76,32 +76,74 @@ begin
   Result := Date;
 end;
 
+function ReadInt: integer;
+var
+  s: string[255];
+  res: integer;
+  isCorrect: boolean;
+begin
+  isCorrect := true;
+  repeat
+    if not isCorrect then
+      Write('Ошибка ввода. Повторите: ');
+    Readln(s);
+    isCorrect := false;
+  until TryStrToInt(string(s), res);
+  Result := res;
+end;
+
+function ReadEmpCode(const Head: PEmployeeNode): integer;
+var
+  isCorrect, used: boolean;
+  curCode: integer;
+  curNode: PEmployeeNode;
+begin
+  isCorrect := false;
+  repeat
+    curCode := readInt;
+    used := false;
+    curNode := Head;
+    while curNode <> nil do
+      if (curNode^.Data.Code = curCode) then
+        used := true;
+    if used then
+    begin
+      Write('Такой код уже существует. Введите другой: ');
+    end
+    else
+    begin
+      isCorrect := true;
+    end;
+  until isCorrect;
+  Result := curCode;
+end;
+
 //Clear memory
 
 procedure ClearEmployees(var Head: PEmployeeNode);
 var
-  Current, Temp: PEmployeeNode;
+  current, temp: PEmployeeNode;
 begin
-  Current := Head;
-  while Current <> nil do
+  current := Head;
+  while current <> nil do
   begin
-    Temp := Current;
-    Current := Current^.Next;
-    Dispose(Temp);
+    temp := current;
+    current := current^.Next;
+    Dispose(temp);
   end;
   Head := nil;
 end;
 
 procedure ClearProjects(var Head: PProjectNode);
 var
-  Current, Temp: PProjectNode;
+  current, temp: PProjectNode;
 begin
-  Current := Head;
-  while Current <> nil do
+  current := Head;
+  while current <> nil do
   begin
-    Temp := Current;
-    Current := Current^.Next;
-    Dispose(Temp);
+    temp := current;
+    current := current^.Next;
+    Dispose(temp);
   end;
   Head := nil;
 end;
@@ -113,8 +155,8 @@ procedure LoadData(var EmployeesHead: PEmployeeNode; var ProjectsHead: PProjectN
 var
   FEmployees: file of TEmployee;
   FProjects: file of TProject;
-  Emp: TEmployee;
-  Proj: TProject;
+  emp: TEmployee;
+  proj: TProject;
   NewNodeEmp: PEmployeeNode;
   NewNodeProj: PProjectNode;
 begin
@@ -127,7 +169,7 @@ begin
     begin
       Read(FEmployees, Emp);
       New(NewNodeEmp);
-      NewNodeEmp^.Data := Emp;
+      NewNodeEmp^.Data := emp;
       NewNodeEmp^.Next := EmployeesHead;
       EmployeesHead := NewNodeEmp;
     end;
@@ -143,177 +185,380 @@ begin
     begin
       Read(FProjects, Proj);
       New(NewNodeProj);
-      NewNodeProj^.Data := Proj;
+      NewNodeProj^.Data := proj;
       NewNodeProj^.Next := ProjectsHead;
       ProjectsHead := NewNodeProj;
     end;
     CloseFile(FProjects);
   end;
-  Writeln('Данные загружены. Нажмите любую клавишу для продолжения...');
-  readln;
+  Writeln('Данные загружены. Нажмите Enter для продолжения...');
+  Readln;
 end;
 
 procedure SaveData(var EmployeesHead: PEmployeeNode; var ProjectsHead: PProjectNode);
 var
-  CurrentEmp: PEmployeeNode;
-  CurrentProj: PProjectNode;
+  currentEmp: PEmployeeNode;
+  currentProj: PProjectNode;
   FEmployees: file of TEmployee;
   FProjects: file of TProject;
 begin
   // Save employees
   AssignFile(FEmployees, 'employees.TEmployee');
   Rewrite(FEmployees);
-  CurrentEmp := EmployeesHead;
-  while CurrentEmp <> nil do
+  currentEmp := EmployeesHead;
+  while currentEmp <> nil do
   begin
-    Write(FEmployees, CurrentEmp^.Data);
-    CurrentEmp := CurrentEmp^.Next;
+    Write(FEmployees, currentEmp^.Data);
+    currentEmp := currentEmp^.Next;
   end;
   CloseFile(FEmployees);
 
   // Save projects
   AssignFile(FProjects, 'projects.TProject');
   Rewrite(FProjects);
-  CurrentProj := ProjectsHead;
-  while CurrentProj <> nil do
+  currentProj := ProjectsHead;
+  while currentProj <> nil do
   begin
-    Write(FProjects, CurrentProj^.Data);
-    CurrentProj := CurrentProj^.Next;
+    Write(FProjects, currentProj^.Data);
+    currentProj := currentProj^.Next;
   end;
   CloseFile(FProjects);
   Writeln('Данные сохранены. Нажмите Enter...');
-  readln;
+  Readln;
 end;
 
 // Print data
 
-procedure ViewEmployee(const Employee: PEmployeeNode);
+procedure ViewEmployee(const employee: PEmployeeNode);
 begin
-  Writeln('Код: ', Employee^.Data.Code);
-  Writeln('ФИО: ', Employee^.Data.Name);
-  Writeln('Должность: ', Employee^.Data.Position);
-  Writeln('Часов в день: ', Employee^.Data.HoursPerDay);
-  Writeln('Код руководителя: ', Employee^.Data.ManagerCode);
+  Writeln('Код: ', employee^.Data.Code);
+  Writeln('ФИО: ', employee^.Data.Name);
+  Writeln('Должность: ', employee^.Data.Position);
+  Writeln('Часов в день: ', employee^.Data.HoursPerDay);
+  Writeln('Код руководителя: ', employee^.Data.ManagerCode);
 end;
 
 procedure ViewEmployees(const EmployeesHead: PEmployeeNode);
 var
-  Current: PEmployeeNode;
+  current: PEmployeeNode;
 begin
-  Current := EmployeesHead;
-  while Current <> nil do
+  current := EmployeesHead;
+  while current <> nil do
   begin
-    ViewEmployee(Current);
+    ViewEmployee(current);
     Writeln('---------------------');
-    Current := Current^.Next;
+    current := current^.Next;
   end;
 end;
 
-procedure ViewProject(const Project: PProjectNode);
+procedure ViewProject(const project: PProjectNode);
 begin
-    Writeln('Проект: ', Project^.Data.ProjectName);
-    Writeln('Задача: ', Project^.Data.Task);
-    Writeln('Исполнитель: ', Project^.Data.EmployeeCode);
-    Writeln('Руководитель: ', Project^.Data.ManagerCode);
-    Writeln('Дата выдачи: ', DateToStr(Project^.Data.IssueDate));
-    Writeln('Срок выполнения: ', DateToStr(Project^.Data.Deadline));
+    Writeln('Проект: ', project^.Data.ProjectName);
+    Writeln('Задача: ', project^.Data.Task);
+    Writeln('Исполнитель: ', project^.Data.EmployeeCode);
+    Writeln('Руководитель: ', project^.Data.ManagerCode);
+    Writeln('Дата выдачи: ', DateToStr(project^.Data.IssueDate));
+    Writeln('Срок выполнения: ', DateToStr(project^.Data.Deadline));
 end;
 
 procedure ViewProjects(const ProjectsHead: PProjectNode);
 var
-  Current: PProjectNode;
+  current: PProjectNode;
 begin
-  Current := ProjectsHead;
-  while Current <> nil do
+  current := ProjectsHead;
+  while current <> nil do
   begin
-    ViewProject(Current);
+    ViewProject(current);
     Writeln('---------------------');
-    Current := Current^.Next;
+    current := current^.Next;
   end;
 end;
 
 // Add data
 
-procedure AddEmployee(var EmployeesHead: PEmployeeNode);
+function genCode(var empCode: integer): integer;
+begin
+  Result := empCode;
+  empCode := empCode + 1;
+end;
+
+function getProjName(var ProjectsHead: PProjectNode): string;
 var
-  Emp: TEmployee;
-  NewNode: PEmployeeNode;
+  used, secondIter: boolean;
+  name: string[50];
+  current: PProjectNode;
+begin
+  secondIter := false;
+  repeat
+    if secondIter then
+      write('Проект с таким названием уже существует. Введите другое название:');
+    readln(name);
+
+    current := ProjectsHead;
+    used := false;
+    while current <> nil do
+    begin
+      if current^.Data.ProjectName = name then
+        used := true;
+    end;
+    secondIter := true;
+  until not used;
+  Result := name;
+end;
+
+procedure AddEmployee(var EmployeesHead: PEmployeeNode; var empCode: integer);
+var
+  emp: TEmployee;
+  newNode: PEmployeeNode;
 begin
   Writeln('Добавление сотрудника:');
-  Write('Код: '); Readln(Emp.Code);
-  Write('ФИО: '); Readln(Emp.Name);
-  Write('Должность: '); Readln(Emp.Position);
-  Write('Часов в день: '); Readln(Emp.HoursPerDay);
-  Write('Код руководителя: '); Readln(Emp.ManagerCode);
+  Write('Код: '); emp.Code := genCode(empCode);//emp.Code := readEmpCode(EmployeesHead);
+  Write('ФИО: '); Readln(emp.Name);
+  Write('Должность: '); Readln(emp.Position);
+  Write('Часов в день: '); emp.HoursPerDay := readInt;
+  Write('Код руководителя: '); emp.ManagerCode := readInt;
 
-  New(NewNode);
-  NewNode^.Data := Emp;
-  NewNode^.Next := EmployeesHead;
-  EmployeesHead := NewNode;
+  New(newNode);
+  newNode^.Data := emp;
+  newNode^.Next := EmployeesHead;
+  EmployeesHead := newNode;
 end;
 
 procedure AddProject(var ProjectsHead: PProjectNode);
 var
-  Proj: TProject;
-  NewNode: PProjectNode;
+  proj: TProject;
+  newNode: PProjectNode;
 begin
   Writeln('Добавление проекта:');
-  Write('Название проекта: '); Readln(Proj.ProjectName);
-  Write('Задача: '); Readln(Proj.Task);
-  Write('Код исполнителя: '); Readln(Proj.EmployeeCode);
-  Write('Код руководителя: '); Readln(Proj.ManagerCode);
-  Proj.IssueDate := ReadDate('Дата выдачи');
-  Proj.Deadline := ReadDate('Срок выполнения');
+  Write('Название проекта: '); proj.ProjectName := getProjName(ProjectsHead);//Readln(proj.ProjectName);
+  Write('Задача: '); Readln(proj.Task);
+  Write('Код исполнителя: '); proj.EmployeeCode := readInt;
+  Write('Код руководителя: '); proj.ManagerCode := readInt;
+  proj.IssueDate := ReadDate('Дата выдачи');
+  proj.Deadline := ReadDate('Срок выполнения');
 
-  New(NewNode);
-  NewNode^.Data := Proj;
-  NewNode^.Next := ProjectsHead;
-  ProjectsHead := NewNode;
+  New(newNode);
+  newNode^.Data := proj;
+  newNode^.Next := ProjectsHead;
+  ProjectsHead := newNode;
 end;
 
 
 // Delete data
 
+// TODO: delete by name
 procedure DeleteEmployee(var EmployeesHead: PEmployeeNode);
 var
-  Code: Integer;
-  Current, Prev: PEmployeeNode;
-  Found: Boolean;
+  code: Integer;
+  current, prev: PEmployeeNode;
+  found: Boolean;
 begin
   Write('Введите код сотрудника для удаления: ');
-  Readln(Code);
+  code := readInt;
 
-  Current := EmployeesHead;
-  Prev := nil;
+  current := EmployeesHead;
+  prev := nil;
   Found := False;
 
-  while (not Found) and (Current <> nil) do
+  while (not Found) and (current <> nil) do
   begin
-    if Current^.Data.Code = Code then
+    if current^.Data.Code = code then
     begin
-      if Prev = nil then
-        EmployeesHead := Current^.Next
+      if prev = nil then
+        EmployeesHead := current^.Next
       else
-        Prev^.Next := Current^.Next;
+        prev^.Next := current^.Next;
 
-      Dispose(Current);
-      Found := True;
+      Dispose(current);
+      found := True;
     end
     else
     begin
-      Prev := Current;
-      Current := Current^.Next;
+      prev := current;
+      current := current^.Next;
     end;
   end;
 
-  if Found then
+  if found then
     Writeln('Сотрудник удален')
   else
     Writeln('Сотрудник не найден');
-  writeln('Нажмите любую  клавишу для продолжения...');
-  readln;
+  Writeln('Нажмите Enter для продолжения...');
+  Readln;
 end;
 
+procedure DeleteProject(var ProjectssHead: PProjectNode);
+var
+  name: string[50];
+  current, prev: PProjectNode;
+  found: Boolean;
+begin
+  Write('Введите название проекта для удаления: ');
+  readln(name);
+
+  current := ProjectssHead;
+  prev := nil;
+  Found := False;
+
+  while (not Found) and (current <> nil) do
+  begin
+    if current^.Data.ProjectName = name then
+    begin
+      if prev = nil then
+        ProjectssHead := current^.Next
+      else
+        prev^.Next := current^.Next;
+
+      Dispose(current);
+      found := True;
+    end
+    else
+    begin
+      prev := current;
+      current := current^.Next;
+    end;
+  end;
+
+  if found then
+    Writeln('Проект удален')
+  else
+    Writeln('Проект не найден');
+  Writeln('Нажмите Enter для продолжения...');
+  Readln;
+end;
+
+procedure DeleteData(var EmployeesHead: PEmployeeNode; var ProjectssHead: PProjectNode);
+var
+  choice: integer;
+begin
+  Writeln('=== Удаление данных ===');
+
+  Writeln('1. Удаление сотрудников');
+  Writeln('2. Удаление проектов');
+  Writeln('3. Назад');
+  Write('Выберите: ');
+  choice := readInt;
+  case choice of
+    1:
+      begin
+        clearScreen;
+        DeleteEmployee(EmployeesHead);
+      end;
+    2:
+      begin
+        clearScreen;
+        DeleteProject(ProjectssHead);
+      end;
+  end;
+end;
+
+// Edit data
+
+procedure EditProject(var ProjectssHead: PProjectNode);
+var
+  name: string[50];
+  found: Boolean;
+  current: PProjectNode;
+  choice: integer;
+begin
+  Write('Введите название проекта, который необходимо изменить: ');
+  readln(name);
+
+  current := ProjectssHead;
+  Found := False;
+
+  while (not Found) and (current <> nil) do
+  begin
+    if current^.Data.ProjectName = name then
+    begin
+      clearScreen;
+      writeln('Введите номер параметра, который нужно изменить');
+      writeln('1. Название');
+      writeln('2. Задача');
+      writeln('3. Исполнитель');
+      writeln('4. Руководитель');
+      writeln('5. Дата выдачи');
+      writeln('6. Срок выполнения');
+      writeln('7. Выход');
+      choice := ReadInt;
+      {
+      Writeln('Добавление проекта:');
+      Write('Название проекта: '); proj.ProjectName := getProjName(ProjectsHead);
+      Write('Задача: '); Readln(proj.Task);
+      Write('Код исполнителя: '); proj.EmployeeCode := readInt;
+      Write('Код руководителя: '); proj.ManagerCode := readInt;
+      proj.IssueDate := ReadDate('Дата выдачи');
+      proj.Deadline := ReadDate('Срок выполнения');
+      }
+      case choice of
+        1:
+          begin
+            Write('Новое название проекта: ');
+            current^.Data.ProjectName := getProjName(ProjectsHead);
+          end;
+        2:
+          begin
+            Write('Новая задача: ');
+            Readln(current^.Data.Task);
+          end;
+        3:
+          begin
+            Write('Новый код исполнителя: ');
+            current^.Data.EmployeeCode := readInt;
+          end;
+        4:
+          begin
+            Write('Новый код руководителя: ');
+            current^.Data.ManagerCode := readInt;
+          end;
+        5:
+          begin
+            current^.Data.IssueDate := ReadDate('Новая дата выдачи: ');
+          end;
+        6:
+          begin
+            current^.Data.Deadline := ReadDate('Новый срок выполнения: ');
+          end;
+      end;
+    end
+    else
+    begin
+      current := current^.next;
+    end;
+  end;
+
+  if found then
+    Writeln('Проект Изменён')
+  else
+    Writeln('Проект не найден');
+  Writeln('Нажмите Enter для продолжения...');
+  Readln;
+end;
+
+procedure EditData(var EmployeesHead: PEmployeeNode; var ProjectssHead: PProjectNode);
+var
+  choice: integer;
+begin
+  Writeln('=== Редактирование данных ===');
+
+  Writeln('1. Удаление сотрудников');
+  Writeln('2. Удаление проектов');
+  Writeln('3. Назад');
+  Write('Выберите: ');
+  choice := readInt;
+  case choice of
+    1:
+      begin
+        clearScreen;
+        EditEmployee(EmployeesHead);
+      end;
+    2:
+      begin
+        clearScreen;
+        EditProject(ProjectssHead);
+      end;
+  end;
+end;
 
 // Special func
 
@@ -327,12 +572,11 @@ var
   HasData: Boolean;
   ProjectsEmpty: Boolean;
 begin
-  ClearScreen;
   Writeln('1. Список задач по проекту');
   Writeln('2. Задачи с ближайшим сроком (месяц)');
   Writeln('3. Назад');
   Write('Выберите функцию: ');
-  Readln(Choice);
+  Choice := readInt;
 
   if Choice = 1 then
   begin
@@ -411,7 +655,7 @@ begin
   Writeln('2. Нет');
   Writeln('3. Назад');
   Write('Выберите: ');
-  readln(Choice);
+  Choice := readInt;
   if Choice = 1 then
   begin
     quit := true;
@@ -433,7 +677,6 @@ begin
   Found := False;
   Quit := false;
 
-  // Преобразование значения в нужный тип
   case Field of
     esfCode, esfHours, esfManagerCode:
       if not TryStrToInt(Value, SearchCode) then
@@ -455,14 +698,14 @@ begin
           end;
 
         esfName:
-          if LowerCase(Value) = LowerCase(Current^.Data.Name) then
+          if LowerCase(Value) = LowerCase(string(Current^.Data.Name)) then
           begin
             ViewEmployee(Current);
             Found := True;
           end;
 
         esfPosition:
-          if LowerCase(Value) = LowerCase(Current^.Data.Position) then
+          if LowerCase(Value) = LowerCase(string(Current^.Data.Position)) then
           begin
             ViewEmployee(Current);
             Found := True;
@@ -504,7 +747,6 @@ begin
   Found := False;
   Quit := false;
 
-  // Преобразование значения в нужный тип
   case Field of
     psfEmployeeCode, psfManagerCode:
       if not TryStrToInt(Value, SearchCode) then
@@ -526,7 +768,7 @@ begin
     begin
       case Field of
         psfName:
-          if LowerCase(Value) = LowerCase(Current^.Data.ProjectName) then
+          if LowerCase(Value) = LowerCase(string(Current^.Data.ProjectName)) then
           begin
             ViewProject(Current);
             Found := True;
@@ -588,11 +830,18 @@ begin
       begin
         var CompareResult: Integer;
         case Field of
-          esfCode:        CompareResult := Current^.Data.Code - NextNode^.Data.Code;
-          esfName:        CompareResult := CompareText(Current^.Data.Name, NextNode^.Data.Name);
-          esfPosition:    CompareResult := CompareText(Current^.Data.Position, NextNode^.Data.Position);
-          esfHours:       CompareResult := Current^.Data.HoursPerDay - NextNode^.Data.HoursPerDay;
-          esfManagerCode: CompareResult := Current^.Data.ManagerCode - NextNode^.Data.ManagerCode;
+          esfCode:
+            CompareResult := Current^.Data.Code - NextNode^.Data.Code;
+          esfName:
+            CompareResult := CompareText(string(Current^.Data.Name), string(NextNode^.Data.Name));
+          esfPosition:
+            CompareResult := CompareText(string(Current^.Data.Position), string(NextNode^.Data.Position));
+          esfHours:
+            CompareResult := Current^.Data.HoursPerDay - NextNode^.Data.HoursPerDay;
+          esfManagerCode:
+            CompareResult := Current^.Data.ManagerCode - NextNode^.Data.ManagerCode;
+          else
+            CompareResult := 0;
         end;
 
         if Direction = sdDescending then
@@ -632,11 +881,18 @@ begin
       while NextNode <> nil do
       begin
         case Field of
-          psfName:         CompareResult := CompareText(Current^.Data.ProjectName, NextNode^.Data.ProjectName);
-          psfEmployeeCode: CompareResult := Current^.Data.EmployeeCode - NextNode^.Data.EmployeeCode;
-          psfManagerCode:  CompareResult := Current^.Data.ManagerCode - NextNode^.Data.ManagerCode;
-          psfIssueDate:    CompareResult := CompareDate(Current^.Data.IssueDate, NextNode^.Data.IssueDate);
-          psfDeadline:     CompareResult := CompareDate(Current^.Data.Deadline, NextNode^.Data.Deadline);
+          psfName:
+            CompareResult := CompareText(string(Current^.Data.ProjectName), string(NextNode^.Data.ProjectName));
+          psfEmployeeCode:
+            CompareResult := Current^.Data.EmployeeCode - NextNode^.Data.EmployeeCode;
+          psfManagerCode:
+            CompareResult := Current^.Data.ManagerCode - NextNode^.Data.ManagerCode;
+          psfIssueDate:
+            CompareResult := CompareDate(Current^.Data.IssueDate, NextNode^.Data.IssueDate);
+          psfDeadline:
+            CompareResult := CompareDate(Current^.Data.Deadline, NextNode^.Data.Deadline);
+          else
+            CompareResult := 0;
         end;
 
         if Direction = sdDescending then
@@ -671,7 +927,7 @@ begin
   Writeln('2. Проекты');
   Writeln('3. Назад');
   Write('Выберите список: ');
-  Readln(SortField);
+  SortField := readInt;
 
   if SortField <> 3 then
   begin
@@ -681,9 +937,8 @@ begin
     Writeln('1. По возрастанию');
     Writeln('2. По убыванию');
     Write('Выберите направление: ');
-    Readln(Direction);
+    Direction := readInt;
 
-    // Выбор параметра
     ClearScreen;
     if SortField = 1 then
     begin
@@ -694,7 +949,7 @@ begin
       Writeln('4. Рабочие часы');
       Writeln('5. Код руководителя');
       Write('Выберите параметр: ');
-      Readln(SortField);
+      SortField := readInt;
 
       SortEmployees(
         EmployeesHead,
@@ -711,7 +966,7 @@ begin
       Writeln('4. Дата выдачи');
       Writeln('5. Срок выполнения');
       Write('Выберите параметр: ');
-      Readln(SortField);
+      SortField := readInt;
 
       SortProjects(
         ProjectsHead,
@@ -738,9 +993,9 @@ begin
   Writeln('2. Поиск проектов');
   Writeln('3. Назад');
   Write('Выберите тип поиска: ');
-  Readln(Choice);
+  Choice := readInt;
 
-  if Choice = 3 then
+  if Choice <> 3 then
   begin
     ClearScreen;
     if Choice = 1 then
@@ -752,7 +1007,7 @@ begin
       Writeln('4. По рабочим часам');
       Writeln('5. По коду руководителя');
       Write('Выберите параметр: ');
-      Readln(SubChoice);
+      SubChoice := readInt;
 
       Write('Введите значение для поиска: ');
       Readln(SearchValue);
@@ -768,7 +1023,7 @@ begin
       Writeln('4. По дате выдачи');
       Writeln('5. По сроку выполнения');
       Write('Выберите параметр: ');
-      Readln(SubChoice);
+      SubChoice := readInt;
 
       Write('Введите значение для поиска: ');
       Readln(SearchValue);
@@ -789,10 +1044,11 @@ begin
   Writeln('2. Проекты');
   Writeln('3. Назад');
   Write('Выберите: ');
-  Readln(Choice);
+  Choice := readInt;
 end;
 
-procedure ShowMenu(EmployeesHead: PEmployeeNode; ProjectsHead: PProjectNode);
+procedure ShowMenu(EmployeesHead: PEmployeeNode;
+                    ProjectsHead: PProjectNode; var empCode: integer);
 var
   Choice, SubChoice: Integer;
   quit: boolean;
@@ -811,7 +1067,7 @@ begin
     Writeln('9. Выход без сохранения');
     Writeln('10. Выход с сохранением');
     Write('Выберите пункт: ');
-    Readln(Choice);
+    Choice := readInt;
 
     case Choice of
       1: LoadData(EmployeesHead, ProjectsHead);
@@ -819,10 +1075,17 @@ begin
         begin
           SubMenu('Просмотр данных', SubChoice);
           case SubChoice of
-            1: ViewEmployees(EmployeesHead);
-            2: ViewProjects(ProjectsHead);
+            1:
+              begin
+                ViewEmployees(EmployeesHead);
+                Write('Нажмите Enter...'); Readln;
+              end;
+            2:
+              begin
+                ViewProjects(ProjectsHead);
+                Write('Нажмите Enter...'); Readln;
+              end;
           end;
-          Write('Нажмите Enter...'); Readln;
         end;
       3: SortMenu(ProjectsHead, EmployeesHead);
       4: SearchMenu(ProjectsHead, EmployeesHead);
@@ -830,13 +1093,22 @@ begin
         begin
           SubMenu('Добавление данных', SubChoice);
           case SubChoice of
-            1: AddEmployee(EmployeesHead);
+            1: AddEmployee(EmployeesHead, empCode);
             2: AddProject(ProjectsHead);
           end;
           writeln('Данные успешно добавлены! Нажмите Enter...');
           readln;
         end;
-      6: DeleteEmployee(EmployeesHead);
+      6:
+        begin
+          ClearScreen;
+          DeleteData(EmployeesHead, ProjectsHead);
+        end;
+      7:
+        begin
+          ClearScreen;
+          EditData(EmployeesHead, ProjectsHead);
+        end;
       8:
         begin
           ClearScreen;
@@ -857,6 +1129,6 @@ begin
 end;
 
 begin
-  ShowMenu(EmployeesHead, ProjectsHead);
-  ClearScreen;
+  empCode := 1;
+  ShowMenu(EmployeesHead, ProjectsHead, empCode);
 end.
