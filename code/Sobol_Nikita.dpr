@@ -303,7 +303,7 @@ begin
     end;
     secondIter := true;
   until not used;
-  Result := name;
+  Result := string(name);
 end;
 
 procedure AddEmployee(var EmployeesHead: PEmployeeNode; var empCode: integer);
@@ -312,7 +312,7 @@ var
   newNode: PEmployeeNode;
 begin
   Writeln('Добавление сотрудника:');
-  Write('Код: '); emp.Code := genCode(empCode);//emp.Code := readEmpCode(EmployeesHead);
+  emp.Code := genCode(empCode);//emp.Code := readEmpCode(EmployeesHead);
   Write('ФИО: '); Readln(emp.Name);
   Write('Должность: '); Readln(emp.Position);
   Write('Часов в день: '); emp.HoursPerDay := readInt;
@@ -330,7 +330,7 @@ var
   newNode: PProjectNode;
 begin
   Writeln('Добавление проекта:');
-  Write('Название проекта: '); proj.ProjectName := getProjName(ProjectsHead);//Readln(proj.ProjectName);
+  Write('Название проекта: '); proj.ProjectName := shortString(getProjName(ProjectsHead));//Readln(proj.ProjectName);
   Write('Задача: '); Readln(proj.Task);
   Write('Код исполнителя: '); proj.EmployeeCode := readInt;
   Write('Код руководителя: '); proj.ManagerCode := readInt;
@@ -548,7 +548,7 @@ begin
         1:
           begin
             Write('Новое название проекта: ');
-            current^.Data.ProjectName := getProjName(ProjectsHead);
+            current^.Data.ProjectName := shortString(getProjName(ProjectsHead));
           end;
         2:
           begin
