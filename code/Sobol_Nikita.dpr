@@ -47,14 +47,14 @@ var
 
 procedure ClearScreen;
 var
-  cursor: COORD;
-  r: cardinal;
+  hConsole: THandle;
+  cursorPos: TCoord;
 begin
-  r := 300;
-  cursor.X := 0;
-  cursor.Y := 0;
-  FillConsoleOutputCharacter(GetStdHandle(STD_OUTPUT_HANDLE), ' ', 80 * r, cursor, r);
-  SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cursor);
+  hConsole := GetStdHandle(STD_OUTPUT_HANDLE);
+  Write(#27'[2J'#27'[3J');
+  cursorPos.X := 0;
+  cursorPos.Y := 0;
+  SetConsoleCursorPosition(hConsole, cursorPos);
 end;
 
 
