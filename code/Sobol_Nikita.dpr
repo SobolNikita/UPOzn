@@ -254,7 +254,7 @@ end;
 
 procedure ViewEmployee(const employee: PEmployeeNode);
 begin
-writeln('------------------------------------------------------------------');
+  writeln('------------------------------------------------------------------');
   Writeln('Код: ', employee^.Data.Code);
   Writeln('ФИО: ', employee^.Data.Name);
   Writeln('Должность: ', employee^.Data.Position);
@@ -422,6 +422,7 @@ begin
   current := EmployeesHead;
   prev := nil;
   Found := False;
+  confirm := false;
 
   while (not Found) and (current <> nil) do
   begin
@@ -452,8 +453,10 @@ begin
     end;
   end;
 
-  if found then
+  if found and confirm then
     Writeln('Сотрудник удален')
+  else if found and (not confirm) then
+    Writeln('Отменено')
   else
     Writeln('Сотрудник не найден');
   Writeln('Нажмите Enter для продолжения...');
@@ -498,7 +501,8 @@ procedure DeleteProject(var ProjectsHead: PProjectNode);
 var
   name: string[50];
   current, prev: PProjectNode;
-  found: Boolean;
+  found, confirm: Boolean;
+  choose: integer;
 begin
   Write('Введите название проекта для удаления: ');
   name := ShortString(ReadStr());
@@ -506,17 +510,29 @@ begin
   current := ProjectsHead;
   prev := nil;
   Found := False;
+  confirm := true;
 
   while (not Found) and (current <> nil) do
   begin
     if current^.Data.ProjectName = name then
     begin
-      if prev = nil then
-        ProjectsHead := current^.Next
-      else
-        prev^.Next := current^.Next;
 
-      Dispose(current);
+      confirm := false;
+      writeln('Действительно удалить этого сотрудника?');
+      writeln('1. Да');
+      writeln('2. Нет');
+      choose := ReadInt;
+      if choose = 1 then
+      begin
+        confirm := true;
+        if prev = nil then
+          ProjectsHead := current^.Next
+        else
+          prev^.Next := current^.Next;
+
+        Dispose(current);
+      end;
+
       found := True;
     end
     else
@@ -526,8 +542,10 @@ begin
     end;
   end;
 
-  if found then
+  if found and confirm then
     Writeln('Проект удален')
+  else if found and (not confirm) then
+    Writeln('Отменено')
   else
     Writeln('Проект не найден');
   Writeln('Нажмите Enter для продолжения...');
@@ -1280,7 +1298,7 @@ begin
   Writeln('1. Поиск сотрудников');
   Writeln('2. Поиск проектов');
   Writeln('3. Назад');
-  Write('Выберите тип поиска: ');
+  Write('Выберите: ');
   Choice := readInt;
 
   if Choice <> 3 then
@@ -1439,4 +1457,6 @@ end;
 begin
   empCode := 1;
   ShowMenu(EmployeesHead, ProjectsHead, empCode);
+  ClearEmployees(EmployeesHead);
+  ClearProjects(ProjectsHead);
 end.
