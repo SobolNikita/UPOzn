@@ -17,6 +17,7 @@ type
   TProject = record
     ProjectName: string[50];
     Task: string[255];
+    Code: integer;
     EmployeeCode: Integer;
     ManagerCode: Integer;
     IssueDate: TDate;
@@ -43,7 +44,7 @@ type
 var
   EmployeesHead: PEmployeeNode = nil;
   ProjectsHead: PProjectNode = nil;
-  empCode: integer;
+  empCode, projCode: integer;
 
 procedure ClearScreen;
 var
@@ -185,12 +186,14 @@ begin
   // Loading employees
   if FileExists('employees.TEmployee') then
   begin
+    empCode := 1;
     AssignFile(FEmployees, 'employees.TEmployee');
     Reset(FEmployees);
     while not Eof(FEmployees) do
     begin
-      empCode := empCode + 1;
       Read(FEmployees, Emp);
+      if Emp.Code + 1 > empCode then
+        empCode := Emp.Code + 1;
       New(NewNodeEmp);
       NewNodeEmp^.Data := emp;
       NewNodeEmp^.Next := EmployeesHead;
@@ -202,11 +205,14 @@ begin
   // Loading projects
   if FileExists('projects.TProject') then
   begin
+    projCode := 1;
     AssignFile(FProjects, 'projects.TProject');
     Reset(FProjects);
     while not Eof(FProjects) do
     begin
       Read(FProjects, Proj);
+      if Proj.Code + 1 > projCode then
+        projCode := Proj.Code + 1;
       New(NewNodeProj);
       NewNodeProj^.Data := proj;
       NewNodeProj^.Next := ProjectsHead;
@@ -282,28 +288,30 @@ end;
 
 procedure ViewProject(const project: PProjectNode);
 begin
-    writeln('------------------------------------------------------------------');
+    Writeln('------------------------------------------------------------------');
     Writeln('Проект: ', project^.Data.ProjectName);
+    Writeln('Код: ', project^.Data.Code);
     Writeln('Задача: ', project^.Data.Task);
     Writeln('Исполнитель: ', project^.Data.EmployeeCode);
     Writeln('Руководитель: ', project^.Data.ManagerCode);
     Writeln('Дата выдачи: ', DateToStr(project^.Data.IssueDate));
     Writeln('Срок выполнения: ', DateToStr(project^.Data.Deadline));
-    writeln('------------------------------------------------------------------');
-    writeln;
+    Writeln('------------------------------------------------------------------');
+    Writeln;
 end;
 
 procedure ViewProjectFile(const curFile: TextFile; const project: PProjectNode);
 begin
-    writeln(curFile, '------------------------------------------------------------------');
-    Writeln(curFile, 'Проект: ', project^.Data.ProjectName);
-    Writeln(curFile, 'Задача: ', project^.Data.Task);
-    Writeln(curFile, 'Исполнитель: ', project^.Data.EmployeeCode);
-    Writeln(curFile, 'Руководитель: ', project^.Data.ManagerCode);
-    Writeln(curFile, 'Дата выдачи: ', DateToStr(project^.Data.IssueDate));
-    Writeln(curFile, 'Срок выполнения: ', DateToStr(project^.Data.Deadline));
-    writeln(curFile, '------------------------------------------------------------------');
-    writeln(curFile, '');
+    Writeln(curFile, AnsiToUtf8('------------------------------------------------------------------'));
+    Writeln(curFile, AnsiToUtf8('Проект: '), AnsiToUtf8(string(project^.Data.ProjectName)));
+    Writeln(curFile, AnsiToUtf8('Код: '), AnsiToUtf8(intToStr(project^.Data.Code)));
+    Writeln(curFile, 'Задача: ', AnsiToUtf8(string(project^.Data.Task)));
+    Writeln(curFile, 'Исполнитель: ', AnsiToUtf8(intToStr(project^.Data.EmployeeCode)));
+    Writeln(curFile, 'Руководитель: ', AnsiToUtf8(intToStr(project^.Data.ManagerCode)));
+    Writeln(curFile, 'Дата выдачи: ', AnsiToUtf8(DateToStr(project^.Data.IssueDate)));
+    Writeln(curFile, 'Срок выполнения: ', AnsiToUtf8(DateToStr(project^.Data.Deadline)));
+    Writeln(curFile, '------------------------------------------------------------------');
+    Writeln(curFile, '');
 
 end;
 
@@ -323,35 +331,16 @@ end;
 
 // Add data
 
-function genCode(var empCode: integer): integer;
+function genEmpCode(var empCode: integer): integer;
 begin
   Result := empCode;
   empCode := empCode + 1;
 end;
 
-function getProjName(var ProjectsHead: PProjectNode): string;
-var
-  used, secondIter: boolean;
-  name: string[50];
-  current: PProjectNode;
+function genProjCode(var projCode: integer): integer;
 begin
-  secondIter := false;
-  repeat
-    if secondIter then
-      write('Проект с таким названием уже существует. Введите другое название:');
-    name := ShortString(ReadStr());
-
-    current := ProjectsHead;
-    used := false;
-    while current <> nil do
-    begin
-      if current^.Data.ProjectName = name then
-        used := true;
-      current := current^.Next;
-    end;
-    secondIter := true;
-  until not used;
-  Result := string(name);
+  Result := projCode;
+  projCode := projCode + 1;
 end;
 
 procedure AddEmployee(var EmployeesHead: PEmployeeNode; var empCode: integer);
@@ -360,8 +349,9 @@ var
   newNode: PEmployeeNode;
   secondIter: boolean;
 begin
-  Writeln('Добавление сотрудника:');
-  emp.Code := genCode(empCode);//emp.Code := readEmpCode(EmployeesHead);
+  Writeln('Добавление сотрудника');
+  emp.Code := genEmpCode(empCode);//emp.Code := readEmpCode(EmployeesHead);
+  writeln('Текущий код сотрудника: ', emp.Code);
   Write('ФИО: '); emp.Name := ShortString(ReadStr());
   Write('Должность: '); emp.Position := ShortString(ReadStr());
   secondIter := false;
@@ -390,8 +380,11 @@ var
   newNode: PProjectNode;
 begin
 
-  Writeln('Добавление проекта:');
-  Write('Название проекта: '); proj.ProjectName := shortString(getProjName(ProjectsHead));//Readln(proj.ProjectName);
+  Writeln('Добавление проекта');
+  proj.Code := genProjCode(projCode);
+  writeln('Текущий код проекта: ', proj.Code);
+  Write('Название проекта: ');
+  Readln(proj.ProjectName);
   Write('Задача: '); proj.Task := ShortString(ReadStr());
 
   Write('Код исполнителя: ');
@@ -469,7 +462,7 @@ var
   current: PEmployeeNode;
   name: string[50];
 begin
-  Writeln('=== Удаление данных ===');
+  Writeln('=== Удаление сотрудника ===');
 
   Writeln('1. Удаление по ФИО');
   Writeln('2. Удаление по коду');
@@ -477,7 +470,7 @@ begin
   Write('Выберите: ');
 
   choice := ReadInt;
-  if choice <> 0 then
+  if (choice = 1) or (choice = 2) then
   begin
     if choice = 1 then
     begin
@@ -497,34 +490,33 @@ begin
   end;
 end;
 
-procedure DeleteProject(var ProjectsHead: PProjectNode);
+procedure DeleteTaskByCode(var ProjectsHead: PProjectNode);
 var
-  name: string[50];
+  code, choose: integer;
   current, prev: PProjectNode;
-  found, confirm: Boolean;
-  choose: integer;
+  found, confirm: boolean;
 begin
-  Write('Введите название проекта для удаления: ');
-  name := ShortString(ReadStr());
+  Write('Введите код задания для удаления: ');
+  code := readInt;
 
   current := ProjectsHead;
   prev := nil;
   Found := False;
-  confirm := true;
+  confirm := false;
 
   while (not Found) and (current <> nil) do
   begin
-    if current^.Data.ProjectName = name then
+    if current^.Data.Code = code then
     begin
-
       confirm := false;
-      writeln('Действительно удалить этого сотрудника?');
+      writeln('Действительно удалить это задание?');
       writeln('1. Да');
       writeln('2. Нет');
       choose := ReadInt;
       if choose = 1 then
-      begin
         confirm := true;
+      if confirm then
+      begin
         if prev = nil then
           ProjectsHead := current^.Next
         else
@@ -532,7 +524,6 @@ begin
 
         Dispose(current);
       end;
-
       found := True;
     end
     else
@@ -543,13 +534,47 @@ begin
   end;
 
   if found and confirm then
-    Writeln('Проект удален')
+    Writeln('Задание удалено')
   else if found and (not confirm) then
     Writeln('Отменено')
   else
-    Writeln('Проект не найден');
+    Writeln('Задание не найдено');
   Writeln('Нажмите Enter для продолжения...');
   Readln;
+end;
+
+procedure DeleteProject(var ProjectsHead: PProjectNode);
+var
+  choice: integer;
+  current: PProjectNode;
+  name: string[50];
+begin
+  Writeln('=== Удаление задания ===');
+
+  Writeln('1. Удаление по названию проекта');
+  Writeln('2. Удаление по коду');
+  Writeln('0. Назад');
+  Write('Выберите: ');
+
+  choice := ReadInt;
+  if (choice = 1) or (choice = 2) then
+  begin
+    if choice = 1 then
+    begin
+      write('Введите название проекта: ');
+      name := ShortString(ReadStr());
+      current := ProjectsHead;
+      while current <> nil do
+      begin
+        if current^.Data.ProjectName = name then
+        begin
+          ViewProject(current);
+        end;
+        current := current^.Next;
+      end;
+    end;
+    DeleteTaskByCode(ProjectsHead);
+  end;
 end;
 
 procedure DeleteData(var EmployeesHead: PEmployeeNode; var ProjectssHead: PProjectNode);
@@ -708,90 +733,117 @@ var
   name: string[50];
   found, wasChange: boolean;
   current: PProjectNode;
-  choice: integer;
+  choice, code: integer;
 begin
-  Write('Введите название проекта, который необходимо изменить: ');
-  readln(name);
 
-  current := ProjectsHead;
-  Found := False;
-  waschange := false;
+  Writeln('1. Редактирование по названию проекта');
+  Writeln('2. Редактирование по коду');
+  Writeln('0. Назад');
+  Write('Выберите: ');
 
-  while (not Found) and (current <> nil) do
+  choice := ReadInt;
+  if choice <> 0 then
   begin
-    if current^.Data.ProjectName = name then
+    if choice = 1 then
     begin
-      clearScreen;
-      writeln('Введите номер параметра, который нужно изменить');
-      writeln('1. Название');
-      writeln('2. Задача');
-      writeln('3. Исполнитель');
-      writeln('4. Руководитель');
-      writeln('5. Дата выдачи');
-      writeln('6. Срок выполнения');
-      writeln('0. Выход');
-      choice := ReadInt;
-      case choice of
-        0:
-          begin
-
-          end;
-        1:
-          begin
-            Write('Новое название проекта: ');
-            current^.Data.ProjectName := shortString(getProjName(ProjectsHead));
-            wasChange := true;
-          end;
-        2:
-          begin
-            Write('Новая задача: ');
-            current^.Data.Task := ShortString(ReadStr());
-            wasChange := true;
-          end;
-        3:
-          begin
-            Write('Новый код исполнителя: ');
-            current^.Data.EmployeeCode := readInt;
-            wasChange := true;
-          end;
-        4:
-          begin
-            Write('Новый код руководителя: ');
-            current^.Data.ManagerCode := readInt;
-            wasChange := true;
-          end;
-        5:
-          begin
-            current^.Data.IssueDate := ReadDate('Новая дата выдачи: ');
-            wasChange := true;
-          end;
-        6:
-          begin
-            current^.Data.Deadline := ReadDate('Новый срок выполнения: ');
-            wasChange := true;
-          end;
-        else
-          begin
-            writeln('Нажата неверная клавиша. Выход');
-          end;
+      write('Введите название проекта: ');
+      name := ShortString(ReadStr());
+      current := ProjectsHead;
+      while current <> nil do
+      begin
+        if current^.Data.ProjectName = name then
+        begin
+          ViewProject(current);
+        end;
+        current := current^.Next;
       end;
-      Found := true;
-    end
-    else
-    begin
-      current := current^.next;
     end;
-  end;
 
-  if found then
-    if wasChange then
-      Writeln('Проект изменён')
+    Write('Введите код задания, которое необходимо изменить: ');
+    code := ReadInt;
+
+    current := ProjectsHead;
+    Found := False;
+    waschange := false;
+
+    while (not Found) and (current <> nil) do
+    begin
+      if current^.Data.Code = code then
+      begin
+        clearScreen;
+        writeln('Введите номер параметра, который нужно изменить');
+        writeln('1. Название');
+        writeln('2. Задача');
+        writeln('3. Исполнитель');
+        writeln('4. Руководитель');
+        writeln('5. Дата выдачи');
+        writeln('6. Срок выполнения');
+        writeln('0. Выход');
+        choice := ReadInt;
+        case choice of
+          0:
+            begin
+
+            end;
+          1:
+            begin
+              Write('Новое название проекта: ');
+
+              current^.Data.ProjectName := shortString(ReadStr());
+              //current^.Data.ProjectName := shortString(getProjName(ProjectsHead));
+              wasChange := true;
+            end;
+          2:
+            begin
+              Write('Новая задача: ');
+              current^.Data.Task := ShortString(ReadStr());
+              wasChange := true;
+            end;
+          3:
+            begin
+              Write('Новый код исполнителя: ');
+              current^.Data.EmployeeCode := readInt;
+              wasChange := true;
+            end;
+          4:
+            begin
+              Write('Новый код руководителя: ');
+              current^.Data.ManagerCode := readInt;
+              wasChange := true;
+            end;
+          5:
+            begin
+              current^.Data.IssueDate := ReadDate('Новая дата выдачи: ');
+              wasChange := true;
+            end;
+          6:
+            begin
+              current^.Data.Deadline := ReadDate('Новый срок выполнения: ');
+              wasChange := true;
+            end;
+          else
+            begin
+              writeln('Нажата неверная клавиша. Выход');
+            end;
+        end;
+        Found := true;
+      end
+      else
+      begin
+        current := current^.next;
+      end;
+    end;
+
+    if found then
+      if wasChange then
+        Writeln('Проект изменён')
+      else
+        Writeln('Проект не был изменён')
     else
-      Writeln('Проект не был изменён')
-  else
-    Writeln('Проект не найден');
-  Writeln('Нажмите Enter для продолжения...');
-  Readln;
+      Writeln('Проект не найден');
+    Writeln('Нажмите Enter для продолжения...');
+    Readln;
+  end;
 end;
 
 procedure EditData(var EmployeesHead: PEmployeeNode; var ProjectssHead: PProjectNode);
@@ -863,15 +915,19 @@ begin
 
       HasData := False;
       CurrentProj := ProjectsHead;
-      while (not HasData) and (CurrentProj <> nil) do
+      while (CurrentProj <> nil) do
       begin
         if CurrentProj^.Data.ProjectName = ProjectName then
         begin
-          write('Задачи: ');
+          if not HasData then
+            writeln('Задачи по проекту ', ProjectName, ':');
+
           writeln(CurrentProj^.Data.Task);
 
-          write(OutputFile, 'Задачи: ');
-          writeln(OutputFile, CurrentProj^.Data.Task);
+          if not HasData then
+            writeln(OutputFile, AnsiToUtf8('Задачи по проекту '),
+                     AnsiToUtf8(string(ProjectName)), AnsiToUtf8(':'));
+          writeln(OutputFile, AnsiToUtf8(string(CurrentProj^.Data.Task)));
           //ViewProject(CurrentProj);
           HasData := True;
         end;
@@ -879,10 +935,11 @@ begin
       end;
 
       if not HasData then
+      begin
+        writeln(OutputFile, AnsiToUtf8('Проект не найден'));
         Writeln('Проект не найден');
-
+      end;
       CloseFile(OutputFile);
-
     end
     else
       Writeln('Список проектов пуст!');
@@ -1357,8 +1414,9 @@ procedure ShowMenu(EmployeesHead: PEmployeeNode;
                     ProjectsHead: PProjectNode; var empCode: integer);
 var
   Choice, SubChoice: Integer;
-  quit: boolean;
+  quit, wasLoad: boolean;
 begin
+  wasLoad := false;
   quit := false;
   repeat
     ClearScreen;
@@ -1376,7 +1434,21 @@ begin
     Choice := readInt;
 
     case Choice of
-      1: LoadData(EmployeesHead, ProjectsHead, empCode);
+      1:
+      begin
+        if wasLoad then
+        begin
+          clearScreen;
+          writeln('Ошибка. Данные уже были загружены!');
+          writeln('Нажмите Enter для продолжения');
+          readln;
+        end
+        else
+        begin
+          LoadData(EmployeesHead, ProjectsHead, empCode);
+          wasLoad := true;
+        end;
+      end;
       2:
         begin
           SubMenu('Просмотр данных', SubChoice);
