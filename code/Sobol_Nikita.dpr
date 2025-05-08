@@ -244,7 +244,10 @@ begin
   Writeln('ФИО: ', employee^.Data.Name);
   Writeln('Должность: ', employee^.Data.Position);
   Writeln('Часов в день: ', employee^.Data.HoursPerDay);
-  Writeln('Код руководителя: ', employee^.Data.ManagerCode);
+  if employee^.Data.ManagerCode <> -1 then
+    Writeln('Код руководителя: ', employee^.Data.ManagerCode)
+  else
+    Writeln('Код руководителя отсутствует');
   writeln('------------------------------------------------------------------');
   writeln;
 end;
@@ -349,6 +352,61 @@ begin
   end;
 end;
 
+function genManagerCode(var EmployeesHead: PEmployeeNode; const capt: string;
+                      const empCode: integer): integer;
+var
+  s: string;
+  isCorrect, haveCode: boolean;
+  curEmp: PEmployeeNode;
+begin
+  Result := -1;
+  write(capt);
+  repeat
+    Readln(s);
+    s := trim(s);
+
+    isCorrect := true;
+
+    if (Length(s) <> 0) and (not TryStrToInt(s, Result)) then
+    begin
+      writeln('Ошибка ввода. Повторите: ');
+      isCorrect := false;
+    end;
+    if isCorrect and (Result = empCode) then
+    begin
+      isCorrect := false;
+      writeln('Ошибка. Сотрудник не может быть начальником самого себя. Повторите ввод: ');
+    end;
+
+    if isCorrect then
+    begin
+      if Length(s) = 0 then
+        Result := -1
+      else
+      begin
+        curEmp := EmployeesHead;
+        haveCode := false;
+        while curEmp <> nil do
+        begin
+          if (curEmp^.Data.code <> empCode) and (curEmp^.Data.code = Result) then
+          begin
+            haveCode := true;
+          end;
+          curEmp := curEmp^.Next;
+        end;
+
+        if not haveCode then
+        begin
+          write('Ошибка. сотрудник с таким кодом не найден. Повторите ввод: ');
+          isCorrect := false;
+        end;
+
+      end;
+
+    end;
+  until (isCorrect);
+end;
+
 procedure AddEmployee(var EmployeesHead: PEmployeeNode; var empCode: integer);
 var
   emp: TEmployee;
@@ -370,7 +428,7 @@ begin
     emp.HoursPerDay := readInt;
     secondIter := true;
   until (emp.HoursPerDay >= 0) and (emp.HoursPerDay <= 24);
-  emp.ManagerCode := getEmpByCode(EmployeesHead, 'Код руководителя: ', emp.Code);
+  emp.ManagerCode := genManagerCode(EmployeesHead, 'Код руководителя: ', emp.Code);
 
   New(newNode);
   newNode^.Data := emp;
@@ -868,7 +926,7 @@ begin
           end;
         4:
           begin
-            getEmpByCode(EmployeesHead, 'Новый код руководителя: ', -1);
+            current^.Data.ManagerCode := genManagerCode(EmployeesHead, 'Новый код руководителя: ', current^.Data.code);
             waschange := true;
           end;
         else
